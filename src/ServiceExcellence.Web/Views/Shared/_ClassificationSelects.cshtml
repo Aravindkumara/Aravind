@@ -1,0 +1,41 @@
+@model ClassificationSelectsModel
+@*
+    Cascading product classification selects. Every level below division is optional: leaving a level empty
+    means the SOP applies to everything below the last selected level.
+*@
+<div class="@Model.ColumnClass mb-3">
+    <label class="form-label" for="@Model.Id("DivisionId")">Division</label>
+    <select class="form-select" id="@Model.Id("DivisionId")" name="@Model.Name("DivisionId")">
+        <option value="">-- Select division --</option>
+        @foreach (var d in Model.Divisions)
+        {
+            <option value="@d.Id" selected="@(d.Id == Model.DivisionId)">@d.Name (@d.Code)</option>
+        }
+    </select>
+    <span class="field-validation-valid" data-valmsg-for="@Model.Name("DivisionId")" data-valmsg-replace="true"></span>
+</div>
+<div class="@Model.ColumnClass mb-3">
+    <label class="form-label" for="@Model.Id("CategoryId")">Model category</label>
+    <select class="form-select" id="@Model.Id("CategoryId")" name="@Model.Name("CategoryId")"
+            data-cascade-parent="#@Model.Id("DivisionId")" data-cascade-url="@Url.Action("Masters", "Lookup", new { type = "Category" })"
+            data-selected="@Model.CategoryId" data-placeholder="All categories"></select>
+</div>
+<div class="@Model.ColumnClass mb-3">
+    <label class="form-label" for="@Model.Id("ModelId")">Model</label>
+    <select class="form-select" id="@Model.Id("ModelId")" name="@Model.Name("ModelId")"
+            data-cascade-parent="#@Model.Id("CategoryId")" data-cascade-url="@Url.Action("Masters", "Lookup", new { type = "Model" })"
+            data-selected="@Model.ModelId" data-placeholder="All models"></select>
+</div>
+<div class="@Model.ColumnClass mb-3">
+    <label class="form-label" for="@Model.Id("VariantId")">Variant</label>
+    <select class="form-select" id="@Model.Id("VariantId")" name="@Model.Name("VariantId")"
+            data-cascade-parent="#@Model.Id("ModelId")" data-cascade-url="@Url.Action("Masters", "Lookup", new { type = "Variant" })"
+            data-selected="@Model.VariantId" data-placeholder="All variants"></select>
+</div>
+<div class="@Model.ColumnClass mb-3">
+    <label class="form-label" for="@Model.Id("AssemblyId")">Assembly level</label>
+    <select class="form-select" id="@Model.Id("AssemblyId")" name="@Model.Name("AssemblyId")"
+            data-cascade-parent="#@Model.Id("VariantId")" data-cascade-url="@Url.Action("Assemblies", "Lookup")" data-cascade-param="variantId"
+            data-selected="@Model.AssemblyId" data-placeholder="All assemblies"></select>
+    <span class="field-validation-valid" data-valmsg-for="@Model.Name("AssemblyId")" data-valmsg-replace="true"></span>
+</div>

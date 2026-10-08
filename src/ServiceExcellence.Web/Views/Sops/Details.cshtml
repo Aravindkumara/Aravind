@@ -1,0 +1,377 @@
+@model SopDetailsViewModel
+@{
+    var sop = Model.Sop;
+    ViewData["Title"] = $"{sop.SopCode} v{sop.Version}";
+    var flow = new[] { SopStatus.Draft, SopStatus.UnderReview, SopStatus.Approved, SopStatus.Published };
+    var currentIndex = sop.Status switch
+    {
+        SopStatus.Rejected => 0,
+        SopStatus.Obsolete => flow.Length,
+        _ => Array.IndexOf(flow, sop.Status)
+    };
+}
+
+<div class="page-header align-items-start">
+    <div>
+        <div class="text-muted small mb-1">
+            <a asp-action="Index">SOPs</a> / @sop.SopCode
+        </div>
+        <h1 class="mb-1">@sop.Title</h1>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="fw-semibold">@sop.SopCode</span>
+            <span class="text-muted">Version @sop.Version</span>
+            <partial name="_StatusBadge" model="sop.Status" />
+            <span class="badge bg-light text-dark border">@ActivityTypes.Display(sop.ActivityType)</span>
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Print" asp-route-id="@sop.Id" target="_blank" class="btn btn-outline-secondary">Print</a>
+        <a asp-action="Pdf" asp-route-id="@sop.Id" class="btn btn-outline-secondary">Download PDF</a>
+        @if (Model.CanEdit)
+        {
+            <a asp-action="Edit" asp-route-id="@sop.Id" class="btn btn-outline-primary">Edit details</a>
+        }
+        @if (Model.CanSubmit)
+        {
+            <form asp-action="Submit" asp-route-id="@sop.Id" method="post" data-confirm="Submit this SOP for review? It cannot be edited while under review.">
+                <button type="submit" class="btn btn-primary">Submit for review</button>
+            </form>
+        }
+        @if (Model.CanReview)
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">Approve</button>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">Reject</button>
+        }
+        @if (Model.CanPublish)
+        {
+            <form asp-action="Publish" asp-route-id="@sop.Id" method="post" data-confirm="Publish this SOP to dealers? Any previously published version of @sop.SopCode will become obsolete.">
+                <button type="submit" class="btn btn-success">Publish</button>
+            </form>
+        }
+        @if (Model.CanCreateVersion)
+        {
+            <form asp-action="NewVersion" asp-route-id="@sop.Id" method="post" data-confirm="Create a new draft version from this SOP?">
+                <button type="submit" class="btn btn-outline-primary">Create new version</button>
+            </form>
+        }
+        @if (Model.CanObsolete)
+        {
+            <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#obsoleteModal">Mark obsolete</button>
+        }
+        @if (Model.CanDelete)
+        {
+            <form asp-action="Delete" asp-route-id="@sop.Id" method="post" data-confirm="Delete this draft SOP permanently?">
+                <button type="submit" class="btn btn-outline-danger">Delete</button>
+            </form>
+        }
+    </div>
+</div>
+
+@if (User.IsInternal())
+{
+    <div class="workflow mb-3" aria-label="Workflow status">
+        @for (var i = 0; i < flow.Length; i++)
+        {
+            var css = i < currentIndex ? "done" : i == currentIndex ? "current" : "";
+            <span class="wf-step @css">@SopStatus.Display(flow[i])</span>
+            if (i < flow.Length - 1) { <span class="wf-sep">&rsaquo;</span> }
+        }
+        @if (sop.Status == SopStatus.Rejected) { <span class="ms-2"><partial name="_StatusBadge" model="sop.Status" /></span> }
+        @if (sop.Status == SopStatus.Obsolete) { <span class="ms-2"><partial name="_StatusBadge" model="sop.Status" /></span> }
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(sop.ReviewRemarks) && User.IsInternal())
+{
+    <div class="alert @(sop.Status == SopStatus.Rejected ? "alert-danger" : "alert-info")">
+        <strong>Reviewer remarks:</strong> @sop.ReviewRemarks
+    </div>
+}
+@if (sop.Status == SopStatus.Obsolete)
+{
+    <div class="alert alert-warning">This version is obsolete and must not be used for service work. Check the SOP list for the current version of @sop.SopCode.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        @if (!string.IsNullOrWhiteSpace(sop.Purpose))
+        {
+            <div class="card mb-3">
+                <div class="card-header">Purpose &amp; scope</div>
+                <div class="card-body" style="white-space: pre-line">@sop.Purpose</div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(sop.SafetyNotes))
+        {
+            <div class="safety-box mb-3">
+                <div class="fw-bold text-uppercase small mb-1" style="color:#8a5300">Safety precautions</div>
+                <div style="white-space: pre-line">@sop.SafetyNotes</div>
+            </div>
+        }
+
+        <div class="d-flex justify-content-between align-items-center mb-2" id="steps">
+            <h2 class="h5 mb-0">Procedure steps <span class="text-muted fw-normal small">(@sop.Steps.Count steps, @sop.TotalStepMinutes min)</span></h2>
+            @if (Model.CanEdit)
+            {
+                <a asp-action="AddStep" asp-route-id="@sop.Id" class="btn btn-sm btn-primary">Add step</a>
+            }
+        </div>
+
+        @if (sop.Steps.Count == 0)
+        {
+            <div class="card mb-3"><div class="card-body text-center text-muted py-4">
+                No steps yet. @if (Model.CanEdit) { <a asp-action="AddStep" asp-route-id="@sop.Id">Add the first step</a> }
+            </div></div>
+        }
+
+        @foreach (var step in sop.Steps)
+        {
+            <div class="card step-card mb-3" id="step-@step.Id">
+                <div class="card-body">
+                    <div class="d-flex gap-3">
+                        <span class="step-no">@step.StepNo</span>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <h3 class="h6 mb-1">@step.Title</h3>
+                                <div class="d-flex gap-1 align-items-start">
+                                    @if (step.EstimatedMinutes > 0) { <span class="badge bg-light text-dark border me-2">@step.EstimatedMinutes min</span> }
+                                    @if (Model.CanEdit)
+                                    {
+                                        <form asp-action="MoveStep" asp-route-id="@sop.Id" asp-route-stepId="@step.Id" asp-route-direction="-1" method="post">
+                                            <button class="btn btn-sm btn-outline-secondary" title="Move up" aria-label="Move step up" disabled="@(step.StepNo == 1)">&uarr;</button>
+                                        </form>
+                                        <form asp-action="MoveStep" asp-route-id="@sop.Id" asp-route-stepId="@step.Id" asp-route-direction="1" method="post">
+                                            <button class="btn btn-sm btn-outline-secondary" title="Move down" aria-label="Move step down" disabled="@(step.StepNo == sop.Steps.Count)">&darr;</button>
+                                        </form>
+                                        <a asp-action="EditStep" asp-route-id="@sop.Id" asp-route-stepId="@step.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        <form asp-action="DeleteStep" asp-route-id="@sop.Id" asp-route-stepId="@step.Id" method="post" data-confirm="Delete step @step.StepNo '@step.Title'?">
+                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                            <div style="white-space: pre-line">@step.Instruction</div>
+                            <dl class="row step-meta small mt-2 mb-0">
+                                @if (!string.IsNullOrWhiteSpace(step.ToolsRequired))
+                                {
+                                    <dt class="col-sm-3">Tools</dt><dd class="col-sm-9">@step.ToolsRequired</dd>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(step.Specification))
+                                {
+                                    <dt class="col-sm-3">Specification</dt><dd class="col-sm-9">@step.Specification</dd>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(step.Caution))
+                                {
+                                    <dt class="col-sm-3 caution">Caution</dt><dd class="col-sm-9 caution">@step.Caution</dd>
+                                }
+                            </dl>
+
+                            @if (step.Attachments.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    @foreach (var att in step.Attachments)
+                                    {
+                                        var url = Url.Action("Attachment", new { id = sop.Id, attachmentId = att.Id });
+                                        <div class="text-center small" style="width: 130px">
+                                            <a href="@url" target="_blank" rel="noopener">
+                                                @if (att.IsImage)
+                                                {
+                                                    <img src="@url" alt="@att.FileName" class="attachment-thumb" loading="lazy" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="attachment-thumb d-flex align-items-center justify-content-center bg-light fw-bold text-danger">PDF</div>
+                                                }
+                                            </a>
+                                            <div class="text-truncate" title="@att.FileName">@att.FileName</div>
+                                            <div class="text-muted">@Ui.FileSize(att.SizeBytes)</div>
+                                            @if (Model.CanEdit)
+                                            {
+                                                <form asp-action="DeleteAttachment" asp-route-id="@sop.Id" asp-route-attachmentId="@att.Id" method="post" data-confirm="Remove '@att.FileName'?">
+                                                    <button class="btn btn-link btn-sm text-danger p-0">Remove</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            @if (Model.CanEdit)
+                            {
+                                <form asp-action="UploadAttachment" asp-route-id="@sop.Id" asp-route-stepId="@step.Id" method="post" enctype="multipart/form-data"
+                                      class="d-flex gap-2 mt-3 align-items-center">
+                                    <input type="file" name="file" class="form-control form-control-sm" style="max-width: 320px"
+                                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required aria-label="Attachment for step @step.StepNo" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Attach</button>
+                                    <span class="small text-muted">Image or PDF, max 10 MB</span>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">Applies to</div>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Division</span><span>@sop.DivisionName</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Model category</span><span>@(sop.CategoryName ?? "All")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Model</span><span>@(sop.ModelName ?? "All")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Variant</span><span>@(sop.VariantName ?? "All")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Assembly</span><span class="text-end">@(sop.AssemblyPath ?? "All")</span></li>
+            </ul>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Details</div>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Standard labour time</span><span>@sop.StandardTimeMinutes min</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Sum of step times</span><span>@sop.TotalStepMinutes min</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Skill level</span><span>@(sop.SkillLevel ?? "-")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Created</span><span>@sop.CreatedByName, @Ui.Date(sop.CreatedAt)</span></li>
+                @if (sop.UpdatedAt.HasValue)
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Last updated</span><span>@(sop.UpdatedByName ?? "-"), @Ui.Date(sop.UpdatedAt)</span></li>
+                }
+                @if (sop.ApprovedAt.HasValue)
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Approved</span><span>@sop.ApprovedByName, @Ui.Date(sop.ApprovedAt)</span></li>
+                }
+                @if (sop.PublishedAt.HasValue)
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Published</span><span>@Ui.Date(sop.PublishedAt)</span></li>
+                }
+                @if (sop.PreviousVersionId.HasValue && User.IsInternal())
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Previous version</span><a asp-action="Details" asp-route-id="@sop.PreviousVersionId">View</a></li>
+                }
+            </ul>
+        </div>
+
+        <div class="card mb-3" id="resources">
+            <div class="card-header">Parts, tools &amp; consumables</div>
+            @if (sop.Resources.Count == 0)
+            {
+                <div class="card-body small text-muted">None listed.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush small">
+                    @foreach (var r in sop.Resources)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <span class="badge bg-light text-dark border">@r.ResourceType</span>
+                                @r.Description
+                                @if (!string.IsNullOrWhiteSpace(r.PartNumber)) { <div class="text-muted">@r.PartNumber</div> }
+                            </div>
+                            <div class="text-nowrap d-flex gap-2 align-items-start">
+                                <span>@r.Quantity.ToString("0.##") @r.Uom</span>
+                                @if (Model.CanEdit)
+                                {
+                                    <form asp-action="DeleteResource" asp-route-id="@sop.Id" asp-route-resourceId="@r.Id" method="post" data-confirm="Remove '@r.Description'?">
+                                        <button class="btn btn-link btn-sm text-danger p-0" aria-label="Remove @r.Description">&times;</button>
+                                    </form>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            @if (Model.CanEdit)
+            {
+                <div class="card-body border-top">
+                    <form asp-action="AddResource" asp-route-id="@sop.Id" method="post" class="row g-2">
+                        <div class="col-5">
+                            <select asp-for="NewResource.ResourceType" class="form-select form-select-sm" aria-label="Type">
+                                @foreach (var t in ResourceTypes.All) { <option value="@t">@t</option> }
+                            </select>
+                        </div>
+                        <div class="col-7">
+                            <input asp-for="NewResource.PartNumber" class="form-control form-control-sm" placeholder="Part / tool no." />
+                        </div>
+                        <div class="col-12">
+                            <input asp-for="NewResource.Description" class="form-control form-control-sm" placeholder="Description" required />
+                        </div>
+                        <div class="col-4">
+                            <input asp-for="NewResource.Quantity" class="form-control form-control-sm" type="number" step="0.01" min="0.01" aria-label="Quantity" />
+                        </div>
+                        <div class="col-4">
+                            <input asp-for="NewResource.Uom" class="form-control form-control-sm" placeholder="UoM" list="uoms" />
+                            <datalist id="uoms"><option value="Nos"></option><option value="Set"></option><option value="Ltr"></option><option value="Kg"></option><option value="Mtr"></option></datalist>
+                        </div>
+                        <div class="col-4 d-grid">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Add</button>
+                        </div>
+                    </form>
+                </div>
+            }
+        </div>
+
+        @if (Model.History.Count > 0)
+        {
+            <div class="card mb-3">
+                <div class="card-header">History</div>
+                <div class="card-body">
+                    <ul class="timeline small">
+                        @foreach (var h in Model.History)
+                        {
+                            <li>
+                                <div class="fw-semibold">@h.Action <span class="text-muted fw-normal">by @h.Username</span></div>
+                                <div class="text-muted">@Ui.DateTime(h.CreatedAt)</div>
+                                @if (!string.IsNullOrWhiteSpace(h.Details)) { <div>@h.Details</div> }
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.CanReview)
+{
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-action="Approve" asp-route-id="@sop.Id" method="post" class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="approveTitle">Approve SOP</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body">
+                    <label for="approveRemarks" class="form-label">Remarks (optional)</label>
+                    <textarea id="approveRemarks" name="remarks" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success">Approve</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-action="Reject" asp-route-id="@sop.Id" method="post" class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="rejectTitle">Reject SOP</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body">
+                    <label for="rejectRemarks" class="form-label">What needs to change?</label>
+                    <textarea id="rejectRemarks" name="remarks" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Reject</button></div>
+            </form>
+        </div>
+    </div>
+}
+@if (Model.CanObsolete)
+{
+    <div class="modal fade" id="obsoleteModal" tabindex="-1" aria-labelledby="obsoleteTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-action="Obsolete" asp-route-id="@sop.Id" method="post" class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="obsoleteTitle">Mark SOP obsolete</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body">
+                    <p class="small">Dealers will no longer see this SOP.</p>
+                    <label for="obsoleteRemarks" class="form-label">Reason (optional)</label>
+                    <textarea id="obsoleteRemarks" name="remarks" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-dark">Mark obsolete</button></div>
+            </form>
+        </div>
+    </div>
+}

@@ -1,0 +1,118 @@
+@model SopDetailDto
+@{
+    Layout = null;
+    var sop = Model;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@sop.SopCode v@(sop.Version) - @sop.Title</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body { font-size: 12px; color: #111; background: #fff; }
+        .sheet { max-width: 900px; margin: 0 auto; padding: 24px; }
+        .doc-header { border-bottom: 3px solid #1f4e79; padding-bottom: 8px; margin-bottom: 12px; }
+        .doc-header .label { color: #1f4e79; font-weight: 700; letter-spacing: .05em; font-size: 10px; }
+        h1 { font-size: 20px; margin: 0; }
+        h2 { font-size: 14px; color: #1f4e79; border-bottom: 1px solid #1f4e79; padding-bottom: 2px; margin: 16px 0 8px; }
+        table.info td, table.info th { border: 1px solid #ccc; padding: 4px 6px; }
+        table.info th { background: #f3f3f3; width: 18%; }
+        .safety { background: #fff7e6; border: 1px solid #f0ad4e; padding: 6px 10px; }
+        .step { border: 1px solid #ccc; display: flex; margin-bottom: 8px; page-break-inside: avoid; }
+        .step .num { width: 40px; background: #eee; text-align: center; font-weight: 700; font-size: 18px; color: #1f4e79; padding-top: 6px; }
+        .step .body { padding: 6px 10px; flex: 1; }
+        .step img { max-height: 180px; max-width: 300px; margin: 4px 8px 0 0; border: 1px solid #ddd; }
+        .caution { color: #a61b1b; }
+        .sign { margin-top: 40px; display: flex; gap: 30px; }
+        .sign div { flex: 1; border-top: 1px solid #333; padding-top: 4px; font-size: 10px; }
+        .not-released { color: #a61b1b; font-weight: 700; }
+        @@media print { .no-print { display: none !important; } .sheet { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="sheet">
+        <div class="no-print d-flex justify-content-end gap-2 mb-3">
+            <a href="@Url.Action("Details", new { id = sop.Id })" class="btn btn-sm btn-outline-secondary">Back</a>
+            <a href="@Url.Action("Pdf", new { id = sop.Id })" class="btn btn-sm btn-outline-secondary">Download PDF</a>
+            <button type="button" onclick="window.print()" class="btn btn-sm btn-primary">Print</button>
+        </div>
+
+        <div class="doc-header d-flex justify-content-between">
+            <div>
+                <div class="label">STANDARD OPERATING PROCEDURE</div>
+                <h1>@sop.Title</h1>
+                <div class="text-muted">@ActivityTypes.Display(sop.ActivityType) | Applies to @sop.AppliesToLevel: @sop.AppliesTo</div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold fs-6">@sop.SopCode</div>
+                <div>Version @sop.Version</div>
+                @if (sop.Status != SopStatus.Published)
+                {
+                    <div class="not-released">NOT RELEASED &ndash; @SopStatus.Display(sop.Status).ToUpperInvariant()</div>
+                }
+            </div>
+        </div>
+
+        <table class="info w-100 mb-2">
+            <tr><th>Division</th><td>@sop.DivisionName</td><th>Model category</th><td>@(sop.CategoryName ?? "All")</td></tr>
+            <tr><th>Model</th><td>@(sop.ModelName ?? "All")</td><th>Variant</th><td>@(sop.VariantName ?? "All")</td></tr>
+            <tr><th>Assembly</th><td>@(sop.AssemblyPath ?? "All")</td><th>Skill level</th><td>@(sop.SkillLevel ?? "-")</td></tr>
+            <tr><th>Standard time</th><td>@sop.StandardTimeMinutes min</td><th>Approved by</th><td>@(sop.ApprovedByName is null ? "-" : $"{sop.ApprovedByName} ({Ui.Date(sop.ApprovedAt)})")</td></tr>
+        </table>
+
+        @if (!string.IsNullOrWhiteSpace(sop.Purpose))
+        {
+            <h2>Purpose &amp; scope</h2>
+            <div style="white-space: pre-line">@sop.Purpose</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(sop.SafetyNotes))
+        {
+            <div class="safety mt-3"><strong>SAFETY PRECAUTIONS</strong><div style="white-space: pre-line">@sop.SafetyNotes</div></div>
+        }
+
+        @if (sop.Resources.Count > 0)
+        {
+            <h2>Parts, tools &amp; consumables</h2>
+            <table class="table table-sm table-bordered">
+                <thead class="table-light"><tr><th>Type</th><th>Part / tool no.</th><th>Description</th><th class="text-end">Qty</th></tr></thead>
+                <tbody>
+                @foreach (var r in sop.Resources)
+                {
+                    <tr><td>@r.ResourceType</td><td>@(r.PartNumber ?? "-")</td><td>@r.Description</td><td class="text-end">@r.Quantity.ToString("0.##") @r.Uom</td></tr>
+                }
+                </tbody>
+            </table>
+        }
+
+        <h2>Procedure (@sop.Steps.Count steps, @sop.TotalStepMinutes min)</h2>
+        @foreach (var step in sop.Steps)
+        {
+            <div class="step">
+                <div class="num">@step.StepNo</div>
+                <div class="body">
+                    <div class="d-flex justify-content-between"><strong>@step.Title</strong>@if (step.EstimatedMinutes > 0) { <span class="text-muted">@step.EstimatedMinutes min</span> }</div>
+                    <div style="white-space: pre-line">@step.Instruction</div>
+                    @if (!string.IsNullOrWhiteSpace(step.ToolsRequired)) { <div><strong>Tools:</strong> @step.ToolsRequired</div> }
+                    @if (!string.IsNullOrWhiteSpace(step.Specification)) { <div><strong>Specification:</strong> @step.Specification</div> }
+                    @if (!string.IsNullOrWhiteSpace(step.Caution)) { <div class="caution"><strong>CAUTION:</strong> @step.Caution</div> }
+                    @foreach (var img in step.Attachments.Where(a => a.IsImage))
+                    {
+                        <img src="@Url.Action("Attachment", new { id = sop.Id, attachmentId = img.Id })" alt="@img.FileName" />
+                    }
+                    @{ var docs = step.Attachments.Where(a => !a.IsImage).ToList(); }
+                    @if (docs.Count > 0) { <div class="fst-italic small">Attachments: @string.Join(", ", docs.Select(d => d.FileName))</div> }
+                </div>
+            </div>
+        }
+
+        <div class="sign">
+            <div>Technician name &amp; signature</div>
+            <div>Supervisor / QC signature</div>
+            <div>Date / Job card no.</div>
+        </div>
+        <div class="text-muted small mt-4">Printed @DateTime.Now.ToString("dd-MMM-yyyy HH:mm") by @User.GetFullName(). Uncontrolled when printed &ndash; always check the latest version online.</div>
+    </div>
+</body>
+</html>

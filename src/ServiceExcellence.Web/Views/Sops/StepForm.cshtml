@@ -1,0 +1,73 @@
+@model StepFormViewModel
+@{
+    var isEdit = Model.StepId.HasValue;
+    ViewData["Title"] = isEdit ? $"Edit step {Model.Item.StepNo}" : "Add step";
+}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="text-muted small mb-1"><a asp-action="Details" asp-route-id="@Model.SopId">@Model.SopCode</a> / @ViewData["Title"]</div>
+        <div class="card">
+            <div class="card-header">@ViewData["Title"] &ndash; @Model.SopTitle</div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" asp-for="SopCode" />
+                    <input type="hidden" asp-for="SopTitle" />
+                    <input type="hidden" asp-for="StepCount" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                    <div class="row">
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="Item.StepNo" />
+                        }
+                        else
+                        {
+                            <div class="col-md-2 mb-3">
+                                <label asp-for="Item.StepNo" class="form-label"></label>
+                                <input asp-for="Item.StepNo" class="form-control" type="number" min="1" max="@(Model.StepCount + 1)" />
+                                <div class="form-text">Inserts before the existing step with this number.</div>
+                            </div>
+                        }
+                        <div class="@(isEdit ? "col-md-9" : "col-md-7") mb-3">
+                            <label asp-for="Item.Title" class="form-label"></label>
+                            <input asp-for="Item.Title" class="form-control" placeholder="Short action, e.g. 'Remove caliper'" />
+                            <span asp-validation-for="Item.Title"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Item.EstimatedMinutes" class="form-label"></label>
+                            <input asp-for="Item.EstimatedMinutes" class="form-control" type="number" min="0" />
+                            <span asp-validation-for="Item.EstimatedMinutes"></span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label asp-for="Item.Instruction" class="form-label"></label>
+                            <textarea asp-for="Item.Instruction" class="form-control" rows="5" placeholder="Describe exactly what the technician must do."></textarea>
+                            <span asp-validation-for="Item.Instruction"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Item.ToolsRequired" class="form-label"></label>
+                            <input asp-for="Item.ToolsRequired" class="form-control" placeholder="e.g. 17 mm socket, torque wrench" />
+                            <span asp-validation-for="Item.ToolsRequired"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Item.Specification" class="form-label"></label>
+                            <input asp-for="Item.Specification" class="form-control" placeholder="e.g. 35 Nm; 6.5 L 5W-30" />
+                            <span asp-validation-for="Item.Specification"></span>
+                        </div>
+                        <div class="col-12 mb-4">
+                            <label asp-for="Item.Caution" class="form-label"></label>
+                            <textarea asp-for="Item.Caution" class="form-control" rows="2" placeholder="Hazards or quality-critical points for this step"></textarea>
+                            <span asp-validation-for="Item.Caution"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save step</button>
+                    @if (!isEdit)
+                    {
+                        <button type="submit" name="next" value="add" class="btn btn-outline-primary">Save &amp; add another</button>
+                    }
+                    <a asp-action="Details" asp-route-id="@Model.SopId" class="btn btn-link">Cancel</a>
+                    <div class="form-text mt-2">Photos and PDFs can be attached to the step from the SOP page after saving.</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

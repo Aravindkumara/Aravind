@@ -1,0 +1,96 @@
+@model MasterIndexViewModel
+@{
+    ViewData["Title"] = MasterTypes.DisplayPlural(Model.Type);
+    var parentType = MasterTypes.Parent(Model.Type);
+    var isAdmin = User.IsInRole(Roles.Admin);
+}
+<div class="page-header">
+    <h1>@MasterTypes.DisplayPlural(Model.Type)</h1>
+    @if (isAdmin)
+    {
+        <a asp-action="Create" asp-route-type="@Model.Type" asp-route-parentId="@Model.Query.ParentId" class="btn btn-primary">Add @MasterTypes.Display(Model.Type).ToLowerInvariant()</a>
+    }
+</div>
+
+<form method="get" class="filter-bar row g-2 align-items-end">
+    <div class="col-md-4">
+        <label class="form-label small mb-1" for="search">Search</label>
+        <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, name or description" />
+    </div>
+    @if (parentType is { } pt)
+    {
+        <div class="col-md-3">
+            <label class="form-label small mb-1" for="parentId">@MasterTypes.Display(pt)</label>
+            <select id="parentId" name="parentId" class="form-select">
+                <option value="">All</option>
+                @foreach (var p in Model.Parents)
+                {
+                    <option value="@p.Id" selected="@(p.Id == Model.Query.ParentId)">@p.Name</option>
+                }
+            </select>
+        </div>
+    }
+    <div class="col-md-2">
+        <label class="form-label small mb-1" for="isActive">Status</label>
+        <select id="isActive" name="isActive" class="form-select">
+            <option value="">All</option>
+            <option value="true" selected="@(Model.Query.IsActive == true)">Active</option>
+            <option value="false" selected="@(Model.Query.IsActive == false)">Inactive</option>
+        </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-action="Index" asp-route-type="@Model.Type" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th><partial name="_SortHeader" model="@(("Code", "code"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Name", "name"))" /></th>
+                    @if (parentType is { } pth)
+                    {
+                        <th><partial name="_SortHeader" model="@((MasterTypes.Display(pth), "parent"))" /></th>
+                    }
+                    <th>Description</th>
+                    <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Result.Items)
+            {
+                <tr>
+                    <td class="fw-semibold">@item.Code</td>
+                    <td>@item.Name</td>
+                    @if (parentType != null) { <td>@item.ParentName</td> }
+                    <td class="small text-muted">@item.Description</td>
+                    <td>
+                        @if (item.IsActive) { <span class="badge bg-success">Active</span> }
+                        else { <span class="badge bg-secondary">Inactive</span> }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        @if (Model.Type == MasterType.Variant)
+                        {
+                            <a asp-controller="Assemblies" asp-action="Index" asp-route-variantId="@item.Id" class="btn btn-sm btn-outline-secondary">Assemblies</a>
+                        }
+                        else
+                        {
+                            var child = Model.Type + 1;
+                            <a asp-action="Index" asp-route-type="@child" asp-route-parentId="@item.Id" class="btn btn-sm btn-outline-secondary">@MasterTypes.DisplayPlural(child)</a>
+                        }
+                        @if (isAdmin)
+                        {
+                            <a asp-action="Edit" asp-route-type="@Model.Type" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+<partial name="_Pager" model="PagerModel.From(Model.Result)" />

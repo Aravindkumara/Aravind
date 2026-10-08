@@ -1,0 +1,93 @@
+@model AssemblyIndexViewModel
+@{
+    ViewData["Title"] = "Assemblies";
+    var isAdmin = User.IsInRole(Roles.Admin);
+}
+<div class="page-header">
+    <div>
+        <h1>Assemblies</h1>
+        <div class="text-muted small">Assembly &rarr; Sub-assembly &rarr; Component, defined per variant.</div>
+    </div>
+    @if (isAdmin)
+    {
+        <a asp-action="Create" asp-route-variantId="@Model.Query.VariantId" class="btn btn-primary">Add assembly</a>
+    }
+</div>
+
+<form method="get" class="filter-bar row g-2 align-items-end">
+    <div class="col-md-4">
+        <label class="form-label small mb-1" for="variantId">Variant</label>
+        <select id="variantId" name="variantId" class="form-select">
+            <option value="">All variants</option>
+            @foreach (var v in Model.Variants)
+            {
+                <option value="@v.Id" selected="@(v.Id == Model.Query.VariantId)">@v.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small mb-1" for="level">Level</label>
+        <select id="level" name="level" class="form-select">
+            <option value="">All levels</option>
+            @foreach (var (level, name) in AssemblyLevels.All)
+            {
+                <option value="@level" selected="@(level == Model.Query.Level)">@name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small mb-1" for="search">Search</label>
+        <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, name or path" />
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th><partial name="_SortHeader" model="@(("Variant", "variant"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Assembly path", "path"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Code", "code"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Level", "level"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in Model.Result.Items)
+            {
+                <tr>
+                    <td class="small">@a.VariantName</td>
+                    <td style="padding-left: @(0.5 + (a.Level - 1) * 1.5)rem">
+                        @if (a.Level > 1) { <span class="text-muted">&#8627;</span> }
+                        <span class="@(a.Level == 1 ? "fw-semibold" : "")">@a.Name</span>
+                        @if (a.Level > 1) { <div class="small text-muted">@a.Path</div> }
+                    </td>
+                    <td class="small">@a.Code</td>
+                    <td class="small">@AssemblyLevels.Display(a.Level)</td>
+                    <td>
+                        @if (a.IsActive) { <span class="badge bg-success">Active</span> }
+                        else { <span class="badge bg-secondary">Inactive</span> }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        @if (isAdmin)
+                        {
+                            if (a.Level < 3)
+                            {
+                                <a asp-action="Create" asp-route-variantId="@a.VariantId" asp-route-parentId="@a.Id" class="btn btn-sm btn-outline-secondary">Add child</a>
+                            }
+                            <a asp-action="Edit" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+<partial name="_Pager" model="PagerModel.From(Model.Result)" />

@@ -1,0 +1,48 @@
+@model ListViewModel<DealerDto, PagedQuery>
+@{ ViewData["Title"] = "Dealers"; }
+<div class="page-header">
+    <h1>Dealers</h1>
+    <a asp-action="Create" class="btn btn-primary">Add dealer</a>
+</div>
+<form method="get" class="filter-bar row g-2 align-items-end">
+    <div class="col-md-5">
+        <label class="form-label small mb-1" for="search">Search</label>
+        <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, name, city or state" />
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th><partial name="_SortHeader" model="@(("Code", "code"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("Name", "name"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("City", "city"))" /></th>
+                    <th><partial name="_SortHeader" model="@(("State", "state"))" /></th>
+                    <th>Contact</th>
+                    <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var d in Model.Result.Items)
+            {
+                <tr>
+                    <td class="fw-semibold">@d.Code</td>
+                    <td>@d.Name</td>
+                    <td>@d.City</td>
+                    <td>@d.State</td>
+                    <td class="small">@d.ContactPhone<br />@d.Email</td>
+                    <td>@if (d.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-secondary">Inactive</span> }</td>
+                    <td class="text-end"><a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-sm btn-outline-primary">Edit</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+<partial name="_Pager" model="PagerModel.From(Model.Result)" />

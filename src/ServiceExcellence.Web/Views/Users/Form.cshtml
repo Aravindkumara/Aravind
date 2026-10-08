@@ -1,0 +1,77 @@
+@model UserFormViewModel
+@{ ViewData["Title"] = Model.Id.HasValue ? "Edit user" : "Add user"; }
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">@ViewData["Title"]</div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label asp-for="Item.Username" class="form-label"></label>
+                            <input asp-for="Item.Username" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="Item.Username"></span>
+                        </div>
+                        <div class="col-md-7 mb-3">
+                            <label asp-for="Item.FullName" class="form-label"></label>
+                            <input asp-for="Item.FullName" class="form-control" />
+                            <span asp-validation-for="Item.FullName"></span>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Item.Email" class="form-label"></label>
+                            <input asp-for="Item.Email" class="form-control" />
+                            <span asp-validation-for="Item.Email"></span>
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label asp-for="Item.Role" class="form-label"></label>
+                            <select asp-for="Item.Role" class="form-select" id="roleSelect">
+                                <option value="">-- Select role --</option>
+                                <option value="@Roles.Admin">Admin - manages users, dealers and masters</option>
+                                <option value="@Roles.Author">Author - writes SOPs</option>
+                                <option value="@Roles.Approver">Approver - reviews and publishes SOPs</option>
+                                <option value="@Roles.Dealer">Dealer - reads published SOPs</option>
+                            </select>
+                            <span asp-validation-for="Item.Role"></span>
+                        </div>
+                        <div class="col-md-7 mb-3" id="dealerGroup">
+                            <label asp-for="Item.DealerId" class="form-label"></label>
+                            <select asp-for="Item.DealerId" class="form-select">
+                                <option value="">-- Select dealer --</option>
+                                @foreach (var d in Model.Dealers)
+                                {
+                                    <option value="@d.Id">@d.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Item.DealerId"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Item.Password" class="form-label">@(Model.Id.HasValue ? "Reset password" : "Password")</label>
+                            <input asp-for="Item.Password" class="form-control" autocomplete="new-password" />
+                            <div class="form-text">@(Model.Id.HasValue ? "Leave blank to keep the current password." : "At least 8 characters.")</div>
+                            <span asp-validation-for="Item.Password"></span>
+                        </div>
+                    </div>
+                    <div class="form-check mb-4">
+                        <input asp-for="Item.IsActive" class="form-check-input" />
+                        <label asp-for="Item.IsActive" class="form-check-label"></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a asp-action="Index" class="btn btn-link">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var role = document.getElementById('roleSelect');
+            var group = document.getElementById('dealerGroup');
+            function toggle() { group.style.display = role.value === '@Roles.Dealer' ? '' : 'none'; }
+            role.addEventListener('change', toggle);
+            toggle();
+        })();
+    </script>
+}
