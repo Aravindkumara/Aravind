@@ -9,7 +9,7 @@ namespace ServiceExcellence.Api.Services;
 /// <summary>Renders an SOP as a printable A4 PDF for the workshop floor.</summary>
 public class SopPdfGenerator
 {
-    private const string Accent = "#1F4E79";
+    private const string Accent = "#066FD1";
 
     private readonly IFileStorage _files;
 

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <partial name="_ThemeHead" />
+    <title>@ViewData["Title"] · Service Excellence</title>
+</head>
+<body class="d-flex flex-column auth-body">
+<div class="page page-center">
+    @RenderBody()
+</div>
+<script src="~/lib/tabler/js/tabler.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

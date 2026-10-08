@@ -1,79 +1,107 @@
 @model FinderViewModel
 @{
     ViewData["Title"] = "SOP Finder";
+    ViewData["Pretitle"] = "Service procedures";
+    ViewData["Subtitle"] = "Select the vehicle being serviced to see every published SOP that applies to it, including procedures defined for the whole division, category or model.";
     var selects = new ClassificationSelectsModel(string.Empty, Model.Divisions, Model.Query.DivisionId, Model.Query.CategoryId,
-        Model.Query.ModelId, Model.Query.VariantId, Model.Query.AssemblyId, ColumnClass: "col-md-4 col-lg");
+        Model.Query.ModelId, Model.Query.VariantId, Model.Query.AssemblyId, ColumnClass: "col-md-4 col-xl");
 }
-<div class="page-header">
-    <div>
-        <h1>SOP Finder</h1>
-        <div class="text-muted small">Select the vehicle being serviced. You will see every published SOP that applies to it &ndash; including procedures defined for the whole division, category or model.</div>
-    </div>
-</div>
-
-<form method="get" class="filter-bar">
-    <div class="row g-2">
-        <partial name="_ClassificationSelects" model="selects" />
-    </div>
-    <div class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label small mb-1" for="activityType">Service activity</label>
-            <select id="activityType" name="activityType" class="form-select">
-                <option value="">All activities</option>
-                @foreach (var (code, name) in ActivityTypes.All)
-                {
-                    <option value="@code" selected="@(code == Model.Query.ActivityType)">@name</option>
-                }
-            </select>
+<form method="get" class="card mb-3">
+    <div class="card-body pb-1">
+        <div class="row g-3">
+            <partial name="_ClassificationSelects" model="selects" />
         </div>
-        <div class="col-md-4">
-            <label class="form-label small mb-1" for="search">Keyword</label>
-            <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="e.g. brake, oil" />
-        </div>
-        <div class="col-md-4 d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Find SOPs</button>
-            <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+        <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-4">
+                <label class="form-label" for="activityType"><i class="ti ti-tool me-1 text-secondary"></i>Service activity</label>
+                <select id="activityType" name="activityType" class="form-select">
+                    <option value="">All activities</option>
+                    @foreach (var (code, name) in ActivityTypes.All)
+                    {
+                        <option value="@code" selected="@(code == Model.Query.ActivityType)">@name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="search"><i class="ti ti-search me-1 text-secondary"></i>Keyword</label>
+                <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="e.g. brake, oil" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill"><i class="ti ti-search me-1"></i>Find SOPs</button>
+                <a asp-action="Index" class="btn btn-ghost-secondary">Reset</a>
+            </div>
         </div>
     </div>
 </form>
 
 @if (Model.Result == null)
 {
-    <div class="card"><div class="card-body text-center text-muted py-5">Select at least a division to see applicable SOPs.</div></div>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty">
+                <div class="empty-icon"><i class="ti ti-car"></i></div>
+                <p class="empty-title">Which vehicle are you servicing?</p>
+                <p class="empty-subtitle text-secondary">Select at least a division above. Narrow down to a variant and assembly for the most precise list.</p>
+            </div>
+        </div>
+    </div>
 }
 else
 {
     <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th><partial name="_SortHeader" model="@(("SOP code", "code"))" /></th>
-                        <th><partial name="_SortHeader" model="@(("Title", "title"))" /></th>
-                        <th><partial name="_SortHeader" model="@(("Activity", "activity"))" /></th>
-                        <th><partial name="_SortHeader" model="@(("Defined for", "appliesTo"))" /></th>
-                        <th class="text-end"><partial name="_SortHeader" model="@(("Std. time", "time"))" /></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var s in Model.Result.Items)
-                {
-                    <tr>
-                        <td class="text-nowrap"><a asp-controller="Sops" asp-action="Details" asp-route-id="@s.Id" class="fw-semibold">@s.SopCode</a> <span class="text-muted small">v@(s.Version)</span></td>
-                        <td>@s.Title</td>
-                        <td class="small">@ActivityTypes.Display(s.ActivityType)</td>
-                        <td class="small"><span class="badge bg-light text-dark border">@s.AppliesToLevel</span> @s.AppliesTo</td>
-                        <td class="text-end small text-nowrap">@s.StandardTimeMinutes min</td>
-                        <td class="text-end text-nowrap">
-                            <a asp-controller="Sops" asp-action="Print" asp-route-id="@s.Id" target="_blank" class="btn btn-sm btn-outline-secondary">Print</a>
-                            <a asp-controller="Sops" asp-action="Pdf" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">PDF</a>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Applicable procedures</h3>
+                <p class="card-subtitle">@Model.Result.TotalCount published SOP(s) match this vehicle</p>
+            </div>
         </div>
+        @if (Model.Result.TotalCount == 0)
+        {
+            <div class="card-body"><partial name="_Empty" model="@(("ti-file-search", "No published SOPs", "Nothing has been published for this selection yet."))" /></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table card-table table-vcenter">
+                    <thead>
+                        <tr>
+                            <th><partial name="_SortHeader" model="@(("Procedure", "code"))" /></th>
+                            <th class="d-none d-md-table-cell"><partial name="_SortHeader" model="@(("Activity", "activity"))" /></th>
+                            <th><partial name="_SortHeader" model="@(("Defined for", "appliesTo"))" /></th>
+                            <th class="text-end"><partial name="_SortHeader" model="@(("Time", "time"))" /></th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var s in Model.Result.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="avatar bg-@(Ui.ActivityColor(s.ActivityType))-lt"><i class="ti @Ui.ActivityIcon(s.ActivityType)"></i></span>
+                                    <div>
+                                        <a asp-controller="Sops" asp-action="Details" asp-route-id="@s.Id" class="code-link">@s.SopCode</a>
+                                        <span class="badge bg-secondary-lt ms-1">v@(s.Version)</span>
+                                        <div class="text-secondary small">@s.Title</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small d-none d-md-table-cell">@ActivityTypes.Display(s.ActivityType)</td>
+                            <td class="small"><span class="badge bg-blue-lt me-1">@s.AppliesToLevel</span>@s.AppliesTo</td>
+                            <td class="text-end small text-nowrap"><i class="ti ti-clock text-secondary me-1"></i>@s.StandardTimeMinutes min</td>
+                            <td class="text-nowrap">
+                                <div class="btn-list flex-nowrap">
+                                    <a asp-controller="Sops" asp-action="Print" asp-route-id="@s.Id" target="_blank" class="btn btn-sm btn-icon" title="Print" aria-label="Print @s.SopCode"><i class="ti ti-printer"></i></a>
+                                    <a asp-controller="Sops" asp-action="Pdf" asp-route-id="@s.Id" class="btn btn-sm btn-icon" title="Download PDF" aria-label="Download PDF of @s.SopCode"><i class="ti ti-file-type-pdf"></i></a>
+                                    <a asp-controller="Sops" asp-action="Details" asp-route-id="@s.Id" class="btn btn-sm btn-primary">Open</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_Pager" model="PagerModel.From(Model.Result)" />
+        }
     </div>
-    <partial name="_Pager" model="PagerModel.From(Model.Result)" />
 }

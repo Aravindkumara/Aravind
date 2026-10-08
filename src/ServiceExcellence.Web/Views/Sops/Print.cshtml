@@ -4,24 +4,26 @@
     var sop = Model;
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@sop.SopCode v@(sop.Version) - @sop.Title</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/inter/inter.css" />
+    <link rel="stylesheet" href="~/lib/tabler/css/tabler.min.css" />
+    <link rel="stylesheet" href="~/lib/tabler-icons/tabler-icons.min.css" />
     <style>
-        body { font-size: 12px; color: #111; background: #fff; }
+        body { font-size: 12px; color: #111; background: #fff; font-family: "Inter Variable", sans-serif; }
         .sheet { max-width: 900px; margin: 0 auto; padding: 24px; }
-        .doc-header { border-bottom: 3px solid #1f4e79; padding-bottom: 8px; margin-bottom: 12px; }
-        .doc-header .label { color: #1f4e79; font-weight: 700; letter-spacing: .05em; font-size: 10px; }
+        .doc-header { border-bottom: 3px solid #066fd1; padding-bottom: 8px; margin-bottom: 12px; }
+        .doc-header .label { color: #066fd1; font-weight: 700; letter-spacing: .05em; font-size: 10px; }
         h1 { font-size: 20px; margin: 0; }
-        h2 { font-size: 14px; color: #1f4e79; border-bottom: 1px solid #1f4e79; padding-bottom: 2px; margin: 16px 0 8px; }
+        h2 { font-size: 14px; color: #066fd1; border-bottom: 1px solid #066fd1; padding-bottom: 2px; margin: 16px 0 8px; }
         table.info td, table.info th { border: 1px solid #ccc; padding: 4px 6px; }
         table.info th { background: #f3f3f3; width: 18%; }
         .safety { background: #fff7e6; border: 1px solid #f0ad4e; padding: 6px 10px; }
         .step { border: 1px solid #ccc; display: flex; margin-bottom: 8px; page-break-inside: avoid; }
-        .step .num { width: 40px; background: #eee; text-align: center; font-weight: 700; font-size: 18px; color: #1f4e79; padding-top: 6px; }
+        .step .num { width: 40px; background: #eee; text-align: center; font-weight: 700; font-size: 18px; color: #066fd1; padding-top: 6px; }
         .step .body { padding: 6px 10px; flex: 1; }
         .step img { max-height: 180px; max-width: 300px; margin: 4px 8px 0 0; border: 1px solid #ddd; }
         .caution { color: #a61b1b; }
@@ -34,9 +36,9 @@
 <body>
     <div class="sheet">
         <div class="no-print d-flex justify-content-end gap-2 mb-3">
-            <a href="@Url.Action("Details", new { id = sop.Id })" class="btn btn-sm btn-outline-secondary">Back</a>
-            <a href="@Url.Action("Pdf", new { id = sop.Id })" class="btn btn-sm btn-outline-secondary">Download PDF</a>
-            <button type="button" onclick="window.print()" class="btn btn-sm btn-primary">Print</button>
+            <a href="@Url.Action("Details", new { id = sop.Id })" class="btn btn-sm"><i class="ti ti-arrow-left me-1"></i>Back</a>
+            <a href="@Url.Action("Pdf", new { id = sop.Id })" class="btn btn-sm"><i class="ti ti-file-type-pdf me-1"></i>Download PDF</a>
+            <button type="button" onclick="window.print()" class="btn btn-sm btn-primary"><i class="ti ti-printer me-1"></i>Print</button>
         </div>
 
         <div class="doc-header d-flex justify-content-between">

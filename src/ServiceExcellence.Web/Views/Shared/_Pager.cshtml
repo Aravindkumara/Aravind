@@ -1,29 +1,29 @@
 @model ServiceExcellence.Web.ViewModels.PagerModel
+@* Rendered as a card footer: place it as the last child of the list card. *@
 @if (Model.TotalCount > 0)
 {
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
-        <div class="text-muted small">
-            Showing @((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalCount) of @Model.TotalCount
-        </div>
+    <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+        <p class="m-0 text-secondary">
+            Showing <span class="fw-medium">@((Model.Page - 1) * Model.PageSize + 1)</span>–<span class="fw-medium">@Math.Min(Model.Page * Model.PageSize, Model.TotalCount)</span>
+            of <span class="fw-medium">@Model.TotalCount</span>
+        </p>
         @if (Model.TotalPages > 1)
         {
             var start = Math.Max(1, Model.Page - 2);
             var end = Math.Min(Model.TotalPages, start + 4);
             start = Math.Max(1, end - 4);
-            <nav aria-label="Pagination">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" href="@Url.PageUrl(Model.Page - 1)">Previous</a></li>
-                    @for (var p = start; p <= end; p++)
-                    {
-                        <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="@Url.PageUrl(p)">@p</a></li>
-                    }
-                    <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")"><a class="page-link" href="@Url.PageUrl(Model.Page + 1)">Next</a></li>
-                </ul>
-            </nav>
+            <ul class="pagination m-0 ms-auto">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.PageUrl(Model.Page - 1)" aria-label="Previous page"><i class="ti ti-chevron-left"></i> prev</a>
+                </li>
+                @for (var p = start; p <= end; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="@Url.PageUrl(p)">@p</a></li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.PageUrl(Model.Page + 1)" aria-label="Next page">next <i class="ti ti-chevron-right"></i></a>
+                </li>
+            </ul>
         }
     </div>
-}
-else
-{
-    <div class="text-center text-muted py-4">No records found.</div>
 }

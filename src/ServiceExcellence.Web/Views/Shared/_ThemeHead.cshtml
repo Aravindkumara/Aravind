@@ -1,0 +1,16 @@
+@* Shared <head> assets. The inline script applies the saved light/dark theme before first paint. *@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<script>
+    (function () {
+        var theme = 'light';
+        try { theme = localStorage.getItem('se-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) { }
+        document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+</script>
+<link rel="stylesheet" href="~/lib/inter/inter.css" />
+<link rel="stylesheet" href="~/lib/tabler/css/tabler.min.css" />
+<link rel="stylesheet" href="~/lib/tabler-icons/tabler-icons.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="icon" href="~/favicon.svg" type="image/svg+xml" />

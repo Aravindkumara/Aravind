@@ -1,2 +1,2 @@
 @model (string Label, string Key)
-<a class="sort-link" href="@Url.SortUrl(Model.Key)">@Model.Label <span class="sort-indicator">@Url.SortIndicator(Model.Key)</span></a>
+<a class="table-sort @Url.SortClass(Model.Key)" href="@Url.SortUrl(Model.Key)">@Model.Label</a>

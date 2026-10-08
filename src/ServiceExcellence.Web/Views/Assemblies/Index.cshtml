@@ -1,93 +1,108 @@
 @model AssemblyIndexViewModel
 @{
     ViewData["Title"] = "Assemblies";
+    ViewData["Pretitle"] = "Product hierarchy";
+    ViewData["Subtitle"] = "Assembly → Sub-assembly → Component, defined per variant.";
     var isAdmin = User.IsInRole(Roles.Admin);
+    string LevelColor(short level) => level switch { 1 => "blue", 2 => "teal", _ => "orange" };
+    string LevelIcon(short level) => level switch { 1 => "ti-box", 2 => "ti-boxes", _ => "ti-puzzle" };
 }
-<div class="page-header">
-    <div>
-        <h1>Assemblies</h1>
-        <div class="text-muted small">Assembly &rarr; Sub-assembly &rarr; Component, defined per variant.</div>
-    </div>
+@section PageActions {
     @if (isAdmin)
     {
-        <a asp-action="Create" asp-route-variantId="@Model.Query.VariantId" class="btn btn-primary">Add assembly</a>
+        <a asp-action="Create" asp-route-variantId="@Model.Query.VariantId" class="btn btn-primary"><i class="ti ti-plus me-1"></i>Add assembly</a>
     }
-</div>
-
-<form method="get" class="filter-bar row g-2 align-items-end">
-    <div class="col-md-4">
-        <label class="form-label small mb-1" for="variantId">Variant</label>
-        <select id="variantId" name="variantId" class="form-select">
-            <option value="">All variants</option>
-            @foreach (var v in Model.Variants)
-            {
-                <option value="@v.Id" selected="@(v.Id == Model.Query.VariantId)">@v.Name</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label class="form-label small mb-1" for="level">Level</label>
-        <select id="level" name="level" class="form-select">
-            <option value="">All levels</option>
-            @foreach (var (level, name) in AssemblyLevels.All)
-            {
-                <option value="@level" selected="@(level == Model.Query.Level)">@name</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label class="form-label small mb-1" for="search">Search</label>
-        <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, name or path" />
-    </div>
-    <div class="col-md-3 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Filter</button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
-    </div>
-</form>
+}
 
 <div class="card">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th><partial name="_SortHeader" model="@(("Variant", "variant"))" /></th>
-                    <th><partial name="_SortHeader" model="@(("Assembly path", "path"))" /></th>
-                    <th><partial name="_SortHeader" model="@(("Code", "code"))" /></th>
-                    <th><partial name="_SortHeader" model="@(("Level", "level"))" /></th>
-                    <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var a in Model.Result.Items)
-            {
-                <tr>
-                    <td class="small">@a.VariantName</td>
-                    <td style="padding-left: @(0.5 + (a.Level - 1) * 1.5)rem">
-                        @if (a.Level > 1) { <span class="text-muted">&#8627;</span> }
-                        <span class="@(a.Level == 1 ? "fw-semibold" : "")">@a.Name</span>
-                        @if (a.Level > 1) { <div class="small text-muted">@a.Path</div> }
-                    </td>
-                    <td class="small">@a.Code</td>
-                    <td class="small">@AssemblyLevels.Display(a.Level)</td>
-                    <td>
-                        @if (a.IsActive) { <span class="badge bg-success">Active</span> }
-                        else { <span class="badge bg-secondary">Inactive</span> }
-                    </td>
-                    <td class="text-end text-nowrap">
-                        @if (isAdmin)
-                        {
-                            if (a.Level < 3)
-                            {
-                                <a asp-action="Create" asp-route-variantId="@a.VariantId" asp-route-parentId="@a.Id" class="btn btn-sm btn-outline-secondary">Add child</a>
-                            }
-                            <a asp-action="Edit" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                        }
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
+    <div class="card-body border-bottom py-3">
+        <form method="get" class="row g-2 align-items-end filter-row">
+            <div class="col-md-4">
+                <label class="form-label" for="variantId">Variant</label>
+                <select id="variantId" name="variantId" class="form-select">
+                    <option value="">All variants</option>
+                    @foreach (var v in Model.Variants)
+                    {
+                        <option value="@v.Id" selected="@(v.Id == Model.Query.VariantId)">@v.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="level">Level</label>
+                <select id="level" name="level" class="form-select">
+                    <option value="">All levels</option>
+                    @foreach (var (level, name) in AssemblyLevels.All)
+                    {
+                        <option value="@level" selected="@(level == Model.Query.Level)">@name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="search">Search</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, name or path" />
+                </div>
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-filter me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-ghost-secondary">Reset</a>
+            </div>
+        </form>
     </div>
+    @if (Model.Result.TotalCount == 0)
+    {
+        <div class="card-body"><partial name="_Empty" model="@(("ti-binary-tree-2", "No assemblies found", "Select another variant or add the first assembly."))" /></div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter">
+                <thead>
+                    <tr>
+                        <th><partial name="_SortHeader" model="@(("Assembly", "path"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Code", "code"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Level", "level"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Variant", "variant"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var a in Model.Result.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2" style="padding-left: @((a.Level - 1) * 1.75)rem">
+                                @if (a.Level > 1) { <i class="ti ti-corner-down-right text-secondary"></i> }
+                                <span class="avatar avatar-xs bg-@(LevelColor(a.Level))-lt"><i class="ti @LevelIcon(a.Level)"></i></span>
+                                <div>
+                                    <div class="@(a.Level == 1 ? "fw-semibold" : "")">@a.Name</div>
+                                    @if (a.Level > 1) { <div class="small text-secondary">@a.Path</div> }
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-secondary-lt font-monospace">@a.Code</span></td>
+                        <td><span class="badge bg-@(LevelColor(a.Level))-lt">@AssemblyLevels.Display(a.Level)</span></td>
+                        <td class="small text-secondary">@a.VariantName</td>
+                        <td><partial name="_ActiveBadge" model="a.IsActive" /></td>
+                        <td class="text-nowrap">
+                            @if (isAdmin)
+                            {
+                                <div class="btn-list flex-nowrap">
+                                    @if (a.Level < 3)
+                                    {
+                                        <a asp-action="Create" asp-route-variantId="@a.VariantId" asp-route-parentId="@a.Id" class="btn btn-sm"><i class="ti ti-plus me-1"></i>Child</a>
+                                    }
+                                    <a asp-action="Edit" asp-route-id="@a.Id" class="btn btn-sm btn-icon btn-ghost-primary" title="Edit" aria-label="Edit @a.Name"><i class="ti ti-edit"></i></a>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pager" model="PagerModel.From(Model.Result)" />
+    }
 </div>
-<partial name="_Pager" model="PagerModel.From(Model.Result)" />

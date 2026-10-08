@@ -5,7 +5,7 @@ SOPs are classified by **division → model category → model → variant → a
 
 | Layer      | Technology |
 |------------|------------|
-| Frontend   | ASP.NET Core MVC (.NET 8), Bootstrap 5, jQuery validation |
+| Frontend   | ASP.NET Core MVC (.NET 8), [Tabler](https://tabler.io) UI theme (Bootstrap 5.3), Tabler Icons, Inter font, jQuery validation |
 | Backend    | ASP.NET Core Web API (.NET 8), JWT bearer auth, Swagger, Serilog |
 | Data layer | Dapper + Npgsql (hand-written SQL, no ORM) |
 | Database   | PostgreSQL 16 |
@@ -50,6 +50,18 @@ SOPs are classified by **division → model category → model → variant → a
 | `Author`   | Create and edit draft SOPs, submit them for review, create new versions |
 | `Approver` | Approve, reject, publish and obsolete SOPs written by others |
 | `Dealer`   | Read published SOPs (SOP Finder, SOP Library, print/PDF) |
+
+### User interface
+
+The frontend uses the free, MIT-licensed **[Tabler](https://tabler.io)** admin theme, which is built on Bootstrap 5.3:
+
+- Collapsible sidebar navigation grouped by area, a top bar with quick SOP search, and a user menu.
+- **Light and dark mode** toggle. The choice is remembered per browser and defaults to the OS setting.
+- Dashboard with KPI cards, a breakdown by service activity and an SOP pipeline chart.
+- Status dots, workflow stepper, timeline-style history, empty states and confirmation modals.
+- Responsive down to phone width, so technicians can use the SOP Finder on a tablet or phone in the bay.
+
+All UI assets are bundled under `src/ServiceExcellence.Web/wwwroot/lib` (`tabler`, `tabler-icons`, `inter`), so the app works offline or on an intranet with no CDN access. Their licences are included next to the files: MIT for Tabler and Tabler Icons, SIL OFL 1.1 for Inter.
 
 ## Getting started
 

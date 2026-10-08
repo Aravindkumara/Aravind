@@ -18,12 +18,12 @@ public static class UrlHelperExtensions
 
     public static string PageUrl(this IUrlHelper url, int page) => WithQuery(url, new() { ["page"] = page.ToString() });
 
-    /// <summary>Sort direction indicator for a column header ("▲", "▼" or empty).</summary>
-    public static string SortIndicator(this IUrlHelper url, string sortBy)
+    /// <summary>Tabler table-sort state class for a column header ("asc", "desc" or empty).</summary>
+    public static string SortClass(this IUrlHelper url, string sortBy)
     {
         var query = url.ActionContext.HttpContext.Request.Query;
         if (!string.Equals(query["sortBy"].ToString(), sortBy, StringComparison.OrdinalIgnoreCase)) return "";
-        return query["sortDir"] == "desc" ? "▼" : "▲";
+        return query["sortDir"] == "desc" ? "desc" : "asc";
     }
 
     private static string WithQuery(IUrlHelper url, Dictionary<string, string> overrides)

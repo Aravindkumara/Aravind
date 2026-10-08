@@ -1,88 +1,103 @@
 @model SopFormViewModel
 @{
     var isEdit = Model.Id.HasValue;
-    ViewData["Title"] = isEdit ? $"Edit {Model.Item.SopCode} v{Model.Version}" : "New SOP";
+    ViewData["Title"] = isEdit ? $"Edit {Model.Item.SopCode}" : "New standard operating procedure";
+    ViewData["Pretitle"] = isEdit ? $"Version {Model.Version}" : "Service procedures";
 }
-<div class="page-header">
-    <h1>@ViewData["Title"]</h1>
-</div>
 <form method="post">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
-    <div class="card mb-3">
-        <div class="card-header">Procedure</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label asp-for="Item.SopCode" class="form-label"></label>
-                    @if (isEdit)
-                    {
-                        <input asp-for="Item.SopCode" class="form-control" readonly />
-                    }
-                    else
-                    {
-                        <input asp-for="Item.SopCode" class="form-control text-uppercase" placeholder="e.g. SOP-TERRA-BRK-001" />
-                    }
-                    <span asp-validation-for="Item.SopCode"></span>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <div class="row row-cards">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title"><i class="ti ti-file-text me-2 text-primary"></i>Procedure</h3></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Item.SopCode" class="form-label required"></label>
+                            @if (isEdit)
+                            {
+                                <input asp-for="Item.SopCode" class="form-control font-monospace" readonly />
+                                <small class="form-hint">The code identifies every version and cannot change.</small>
+                            }
+                            else
+                            {
+                                <input asp-for="Item.SopCode" class="form-control text-uppercase font-monospace" placeholder="SOP-TERRA-BRK-001" />
+                            }
+                            <span asp-validation-for="Item.SopCode"></span>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label asp-for="Item.Title" class="form-label required"></label>
+                            <input asp-for="Item.Title" class="form-control" placeholder="e.g. Front brake pad replacement" />
+                            <span asp-validation-for="Item.Title"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Service activity</label>
+                        <div class="form-selectgroup">
+                            @foreach (var (code, name) in ActivityTypes.All)
+                            {
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" name="Item.ActivityType" value="@code" class="form-selectgroup-input" checked="@(Model.Item.ActivityType == code)" />
+                                    <span class="form-selectgroup-label"><i class="ti @Ui.ActivityIcon(code) me-1"></i>@name</span>
+                                </label>
+                            }
+                        </div>
+                        <span asp-validation-for="Item.ActivityType"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Item.Purpose" class="form-label">Purpose &amp; scope</label>
+                        <textarea asp-for="Item.Purpose" class="form-control" rows="3" placeholder="When and why this procedure is performed"></textarea>
+                    </div>
+                    <div class="mb-1">
+                        <label asp-for="Item.SafetyNotes" class="form-label"><i class="ti ti-alert-triangle text-orange me-1"></i>Safety precautions</label>
+                        <textarea asp-for="Item.SafetyNotes" class="form-control" rows="3" placeholder="PPE, hazards, lock-out steps…"></textarea>
+                    </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Item.Title" class="form-label"></label>
-                    <input asp-for="Item.Title" class="form-control" />
-                    <span asp-validation-for="Item.Title"></span>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header"><h3 class="card-title"><i class="ti ti-clock me-2 text-primary"></i>Effort</h3></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Item.StandardTimeMinutes" class="form-label"></label>
+                        <div class="input-group">
+                            <input asp-for="Item.StandardTimeMinutes" class="form-control" type="number" min="0" />
+                            <span class="input-group-text">min</span>
+                        </div>
+                        <span asp-validation-for="Item.StandardTimeMinutes"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Item.SkillLevel" class="form-label"></label>
+                        <input asp-for="Item.SkillLevel" class="form-control" list="skillLevels" placeholder="e.g. Technician L2" />
+                        <datalist id="skillLevels">
+                            <option value="Technician L1"></option>
+                            <option value="Technician L2"></option>
+                            <option value="Technician L3"></option>
+                            <option value="Master Technician"></option>
+                        </datalist>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="Item.ActivityType" class="form-label"></label>
-                    <select asp-for="Item.ActivityType" class="form-select">
-                        <option value="">-- Select --</option>
-                        @foreach (var (code, name) in ActivityTypes.All)
-                        {
-                            <option value="@code">@name</option>
-                        }
-                    </select>
-                    <span asp-validation-for="Item.ActivityType"></span>
-                </div>
-                <div class="col-12 mb-3">
-                    <label asp-for="Item.Purpose" class="form-label">Purpose &amp; scope</label>
-                    <textarea asp-for="Item.Purpose" class="form-control" rows="2"></textarea>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="Item.StandardTimeMinutes" class="form-label"></label>
-                    <input asp-for="Item.StandardTimeMinutes" class="form-control" type="number" min="0" />
-                    <span asp-validation-for="Item.StandardTimeMinutes"></span>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label asp-for="Item.SkillLevel" class="form-label"></label>
-                    <input asp-for="Item.SkillLevel" class="form-control" list="skillLevels" placeholder="e.g. Technician L2" />
-                    <datalist id="skillLevels">
-                        <option value="Technician L1"></option>
-                        <option value="Technician L2"></option>
-                        <option value="Technician L3"></option>
-                        <option value="Master Technician"></option>
-                    </datalist>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Item.SafetyNotes" class="form-label"></label>
-                    <textarea asp-for="Item.SafetyNotes" class="form-control" rows="2" placeholder="PPE, hazards, lock-out steps..."></textarea>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3 class="card-title"><i class="ti ti-binary-tree-2 me-2 text-primary"></i>Applies to</h3></div>
+                <div class="card-body">
+                    <p class="small text-secondary">Choose a division and optionally narrow it down. An SOP set at a higher level also applies to everything below it.</p>
+                    <partial name="_ClassificationSelects" model="new ClassificationSelectsModel(nameof(Model.Item), Model.Divisions, Model.Item.DivisionId, Model.Item.CategoryId, Model.Item.ModelId, Model.Item.VariantId, Model.Item.AssemblyId, ColumnClass: string.Empty)" />
                 </div>
             </div>
         </div>
     </div>
-    <div class="card mb-3">
-        <div class="card-header">Applies to</div>
-        <div class="card-body">
-            <p class="small text-muted">Choose the division and, optionally, narrow it down. An SOP defined at a higher level (for example a whole model) also applies to every variant and assembly below it.</p>
-            <div class="row">
-                <partial name="_ClassificationSelects" model="new ClassificationSelectsModel(nameof(Model.Item), Model.Divisions, Model.Item.DivisionId, Model.Item.CategoryId, Model.Item.ModelId, Model.Item.VariantId, Model.Item.AssemblyId)" />
-            </div>
-        </div>
+    <div class="d-flex justify-content-end gap-2 mt-3">
+        @if (isEdit)
+        {
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-link">Cancel</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-link">Cancel</a>
+        }
+        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>@(isEdit ? "Save changes" : "Create draft")</button>
     </div>
-    <button type="submit" class="btn btn-primary">@(isEdit ? "Save changes" : "Create draft")</button>
-    @if (isEdit)
-    {
-        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-link">Cancel</a>
-    }
-    else
-    {
-        <a asp-action="Index" class="btn btn-link">Cancel</a>
-    }
 </form>
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

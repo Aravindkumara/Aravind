@@ -74,6 +74,20 @@
             load(s, selected);
         });
 
+        // Light / dark theme toggle; the choice is remembered per browser.
+        document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var next = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', next);
+                try { localStorage.setItem('se-theme', next); } catch (e) { }
+            });
+        });
+
+        // Bootstrap tooltips: <button title="..." data-bs-toggle="tooltip">
+        if (window.bootstrap && bootstrap.Tooltip) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
+        }
+
         // Confirmation prompts for destructive actions: <form data-confirm="Are you sure?">
         document.querySelectorAll('form[data-confirm]').forEach(function (form) {
             form.addEventListener('submit', function (e) {
