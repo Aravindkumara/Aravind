@@ -9,7 +9,7 @@
         <option value="">Select division…</option>
         @foreach (var d in Model.Divisions)
         {
-            <option value="@d.Id" selected="@(d.Id == Model.DivisionId)">@d.Name (@d.Code)</option>
+            <option value="@d.Id" selected="@(d.Id == Model.DivisionId)" title="@d.Name (@d.Code)">@d.Name</option>
         }
     </select>
     <span class="field-validation-valid" data-valmsg-for="@Model.Name("DivisionId")" data-valmsg-replace="true"></span>

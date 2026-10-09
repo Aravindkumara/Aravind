@@ -12,10 +12,11 @@
         select.innerHTML = '';
         select.appendChild(new Option(placeholder, ''));
         items.forEach(function (item) {
-            var text = item.path
-                ? '  '.repeat((item.level || 1) - 1) + item.name + ' (' + item.code + ')'
-                : item.name + ' (' + item.code + ')';
+            // Show the name only, so the closed drop-down stays readable; the code (and the
+            // assembly path) is kept in the option's tooltip.
+            var text = item.path ? '\u00A0\u00A0'.repeat((item.level || 1) - 1) + item.name : item.name;
             var option = new Option(text, item.id);
+            option.title = (item.path || item.name) + ' (' + item.code + ')';
             if (String(item.id) === String(selected)) option.selected = true;
             select.appendChild(option);
         });
@@ -72,6 +73,16 @@
             var selected = s.dataset.selected;
             pending.delete(s);
             load(s, selected);
+        });
+
+        // Show the full selected text on hover, for drop-downs too narrow to display it.
+        function syncTitle(select) {
+            var option = select.options[select.selectedIndex];
+            select.title = option && option.value ? (option.title || option.text.trim()) : '';
+        }
+        document.querySelectorAll('select.form-select').forEach(function (select) {
+            syncTitle(select);
+            select.addEventListener('change', function () { syncTitle(select); });
         });
 
         // Light / dark theme toggle; the choice is remembered per browser.
