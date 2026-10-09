@@ -1,0 +1,115 @@
+@model SopIndexViewModel
+@{
+    var isInternal = User.IsInternal();
+    ViewData["Title"] = isInternal ? "Standard operating procedures" : "SOP Library";
+    ViewData["Pretitle"] = "Service procedures";
+    if (!isInternal) { ViewData["Subtitle"] = "All published service procedures. Use the SOP Finder to filter by vehicle and assembly."; }
+    var canAuthor = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Author);
+}
+@section PageActions {
+    <a asp-controller="Finder" asp-action="Index" class="btn"><i class="ti ti-search me-1"></i>SOP Finder</a>
+    @if (canAuthor) { <a asp-action="Create" class="btn btn-primary"><i class="ti ti-plus me-1"></i>New SOP</a> }
+}
+
+@if (isInternal)
+{
+    <div class="mb-3 d-flex flex-wrap gap-2" aria-label="Filter by status">
+        <a asp-action="Index" class="btn btn-sm @(string.IsNullOrEmpty(Model.Query.Status) ? "btn-primary" : "")">All</a>
+        @foreach (var s in SopStatus.All)
+        {
+            <a asp-action="Index" asp-route-status="@s" asp-route-search="@Model.Query.Search" asp-route-activityType="@Model.Query.ActivityType" asp-route-divisionId="@Model.Query.DivisionId"
+               class="btn btn-sm @(s == Model.Query.Status ? "btn-primary" : "")">
+                <span class="status-dot status-@Ui.StatusColor(s) me-2"></span>@SopStatus.Display(s)
+            </a>
+        }
+    </div>
+}
+
+<div class="card">
+    <div class="card-body border-bottom py-3">
+        <form method="get" class="row g-2 align-items-end filter-row">
+            <input type="hidden" name="status" value="@Model.Query.Status" />
+            <div class="col-md-4">
+                <label class="form-label" for="search">Search</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Code, title or purpose" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="divisionId">Division</label>
+                <select id="divisionId" name="divisionId" class="form-select">
+                    <option value="">All divisions</option>
+                    @foreach (var d in Model.Divisions)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.Query.DivisionId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="activityType">Service activity</label>
+                <select id="activityType" name="activityType" class="form-select">
+                    <option value="">All activities</option>
+                    @foreach (var (code, name) in ActivityTypes.All)
+                    {
+                        <option value="@code" selected="@(code == Model.Query.ActivityType)">@name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-filter me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-ghost-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+    @if (Model.Result.TotalCount == 0)
+    {
+        <div class="card-body">
+            <partial name="_Empty" model="@(("ti-file-search", "No SOPs found", "Try another search or clear the filters."))" />
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter">
+                <thead>
+                    <tr>
+                        <th><partial name="_SortHeader" model="@(("Procedure", "code"))" /></th>
+                        <th class="d-none d-md-table-cell"><partial name="_SortHeader" model="@(("Activity", "activity"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Applies to", "appliesTo"))" /></th>
+                        <th class="text-end"><partial name="_SortHeader" model="@(("Time", "time"))" /></th>
+                        @if (isInternal) { <th><partial name="_SortHeader" model="@(("Status", "status"))" /></th> }
+                        <th><partial name="_SortHeader" model="@(("Updated", "updatedAt"))" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in Model.Result.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="avatar bg-@(Ui.ActivityColor(s.ActivityType))-lt"><i class="ti @Ui.ActivityIcon(s.ActivityType)"></i></span>
+                                <div>
+                                    <a asp-action="Details" asp-route-id="@s.Id" class="code-link">@s.SopCode</a>
+                                    <span class="badge bg-secondary-lt ms-1">v@(s.Version)</span>
+                                    <div class="text-secondary small">@s.Title</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small d-none d-md-table-cell">@ActivityTypes.Display(s.ActivityType)</td>
+                        <td class="small">
+                            <div class="text-secondary">@s.AppliesToLevel</div>
+                            <div>@s.AppliesTo</div>
+                            @if (s.VariantName != null && s.AssemblyName != null) { <div class="text-secondary">@s.VariantName</div> }
+                        </td>
+                        <td class="text-end small text-nowrap"><i class="ti ti-clock text-secondary me-1"></i>@s.StandardTimeMinutes min</td>
+                        @if (isInternal) { <td class="text-nowrap"><partial name="_StatusBadge" model="s.Status" /></td> }
+                        <td class="small text-secondary text-nowrap">@Ui.Date(s.UpdatedAt ?? s.CreatedAt)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pager" model="PagerModel.From(Model.Result)" />
+    }
+</div>

@@ -1,0 +1,183 @@
+@model DashboardDto
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Pretitle"] = "Overview";
+    var isInternal = User.IsInternal();
+    var canAuthor = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Author);
+    var totalSops = Model.SopsByStatus.Values.Sum();
+    int Count(string status) => Model.SopsByStatus.TryGetValue(status, out var n) ? n : 0;
+    var maxActivity = Math.Max(1, Model.PublishedByActivity.Values.DefaultIfEmpty(0).Max());
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+}
+@section PageActions {
+    <a asp-controller="Finder" asp-action="Index" class="btn"><i class="ti ti-search me-1"></i>Find SOPs</a>
+    @if (canAuthor)
+    {
+        <a asp-controller="Sops" asp-action="Create" class="btn btn-primary"><i class="ti ti-plus me-1"></i>New SOP</a>
+    }
+}
+
+<div class="row row-deck row-cards">
+    <div class="col-12">
+        <div class="card hero-card">
+            <div class="card-body p-4">
+                <div class="row align-items-center g-3">
+                    <div class="col">
+                        <h2 class="h1 mb-1">@greeting, @User.GetFullName()</h2>
+                        <p class="text-white-75 mb-0">
+                            @if (isInternal)
+                            {
+                                @($"{Count(SopStatus.UnderReview)} SOP(s) awaiting review and {Count(SopStatus.Draft) + Count(SopStatus.Rejected)} in progress.")
+                            }
+                            else
+                            {
+                                @($"{Count(SopStatus.Published)} published procedures are available for your workshop.")
+                            }
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <a asp-controller="Finder" asp-action="Index" class="btn btn-light"><i class="ti ti-car me-1"></i>Find SOPs for a vehicle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @{
+        var stats = new List<(string Label, int Value, string Icon, string Color, string? Url)>
+        {
+            ("Published SOPs", Count(SopStatus.Published), "ti-world-upload", "green", Url.Action("Index", "Sops", new { status = isInternal ? SopStatus.Published : null })),
+        };
+        if (isInternal)
+        {
+            stats.Add(("Awaiting review", Count(SopStatus.UnderReview), "ti-eye-search", "yellow", Url.Action("Index", "Sops", new { status = SopStatus.UnderReview })));
+            stats.Add(("Drafts & rejected", Count(SopStatus.Draft) + Count(SopStatus.Rejected), "ti-pencil", "azure", Url.Action("Index", "Sops", new { status = SopStatus.Draft })));
+        }
+        stats.Add(("Active variants", Model.Variants, "ti-car", "purple", isInternal ? Url.Action("Index", "Masters", new { type = "Variant" }) : null));
+    }
+    @foreach (var s in stats)
+    {
+        <div class="col-sm-6 col-lg-@(12 / stats.Count)">
+            <div class="card card-sm @(s.Url != null ? "card-link card-link-pop" : "")">
+                @if (s.Url != null) { <a href="@s.Url" class="stretched-link" aria-label="@s.Label"></a> }
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="stat-icon avatar bg-@(s.Color)-lt"><i class="ti @s.Icon"></i></span>
+                        </div>
+                        <div class="col">
+                            <div class="stat-value">@s.Value</div>
+                            <div class="text-secondary">@s.Label</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">@(isInternal ? "Recently updated SOPs" : "Recently published SOPs")</h3>
+                <div class="card-actions">
+                    <a asp-controller="Sops" asp-action="Index" class="btn btn-sm">View all <i class="ti ti-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+            @if (Model.RecentSops.Count == 0)
+            {
+                <div class="card-body"><partial name="_Empty" model="@(("ti-file-off", "No SOPs yet", "Create the first standard operating procedure to get started."))" /></div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter">
+                        <thead><tr><th>SOP</th><th>Applies to</th>@if (isInternal) { <th>Status</th> }<th>Updated</th></tr></thead>
+                        <tbody>
+                        @foreach (var s in Model.RecentSops)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="avatar avatar-sm bg-@(Ui.ActivityColor(s.ActivityType))-lt" title="@ActivityTypes.Display(s.ActivityType)"><i class="ti @Ui.ActivityIcon(s.ActivityType)"></i></span>
+                                        <div class="text-truncate" style="max-width: 22rem">
+                                            <a asp-controller="Sops" asp-action="Details" asp-route-id="@s.Id" class="code-link">@s.SopCode</a>
+                                            <span class="badge bg-secondary-lt ms-1">v@(s.Version)</span>
+                                            <div class="text-secondary small text-truncate">@s.Title</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="small"><div class="text-secondary">@s.AppliesToLevel</div>@s.AppliesTo</td>
+                                @if (isInternal) { <td><partial name="_StatusBadge" model="s.Status" /></td> }
+                                <td class="text-secondary small text-nowrap">@Ui.Date(s.UpdatedAt ?? s.CreatedAt)</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Published by service activity</h3></div>
+                    <div class="list-group list-group-flush list-group-hoverable">
+                        @foreach (var (code, name) in ActivityTypes.All)
+                        {
+                            var n = Model.PublishedByActivity.TryGetValue(code, out var c) ? c : 0;
+                            <a asp-controller="Sops" asp-action="Index" asp-route-activityType="@code" class="list-group-item list-group-item-action py-2">
+                                <div class="row align-items-center g-2">
+                                    <div class="col-auto"><span class="avatar avatar-sm bg-@(Ui.ActivityColor(code))-lt"><i class="ti @Ui.ActivityIcon(code)"></i></span></div>
+                                    <div class="col">
+                                        <div class="d-flex justify-content-between"><span>@name</span><strong>@n</strong></div>
+                                        <div class="progress progress-sm mt-1"><div class="progress-bar bg-@Ui.ActivityColor(code)" style="width: @(n * 100 / maxActivity)%" role="progressbar" aria-label="@name" aria-valuenow="@n" aria-valuemin="0" aria-valuemax="@maxActivity"></div></div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+            @if (isInternal && totalSops > 0)
+            {
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">SOP pipeline</h3>
+                            <div class="progress progress-separated mb-3">
+                                @foreach (var status in SopStatus.All.Where(s => Count(s) > 0))
+                                {
+                                    <div class="progress-bar bg-@Ui.StatusColor(status)" role="progressbar" style="width: @(Count(status) * 100.0 / totalSops)%" aria-label="@SopStatus.Display(status)"></div>
+                                }
+                            </div>
+                            <div class="row g-2">
+                                @foreach (var status in SopStatus.All)
+                                {
+                                    <div class="col-6 d-flex align-items-center small">
+                                        <span class="legend-dot me-2 bg-@Ui.StatusColor(status)"></span>
+                                        <span>@SopStatus.Display(status)</span>
+                                        <span class="ms-auto me-3 fw-medium">@Count(status)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="col-12">
+                <div class="card card-sm">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <span class="avatar bg-blue-lt"><i class="ti ti-building-factory-2"></i></span>
+                        <div class="small">
+                            <strong>@Model.Divisions</strong> divisions · <strong>@Model.Models</strong> models · <strong>@Model.Variants</strong> variants
+                            @if (isInternal) { <text> · <strong>@Model.Dealers</strong> dealers</text> }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

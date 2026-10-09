@@ -1,0 +1,82 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "_AuthLayout";
+}
+<div class="container py-4" style="max-width: 62rem">
+    <div class="card auth-card">
+        <div class="row g-0">
+            <div class="col-lg-6 auth-side d-none d-lg-flex flex-column p-5">
+                <div class="d-flex align-items-center gap-2 mb-5">
+                    <span class="app-brand-mark"><i class="ti ti-settings-automation"></i></span>
+                    <span class="fs-3">Service<strong>Excellence</strong></span>
+                </div>
+                <h1 class="display-6 fw-bold mb-3 position-relative" style="z-index:1">One standard for every service bay.</h1>
+                <p class="text-white-50 mb-5 position-relative" style="z-index:1">Author, approve and publish standard operating procedures for every division, model, variant and assembly.</p>
+                <div class="position-relative" style="z-index:1">
+                    <div class="auth-feature"><i class="ti ti-binary-tree-2"></i><div><strong>Product-aware</strong><div class="text-white-50 small">Procedures classified down to component level.</div></div></div>
+                    <div class="auth-feature"><i class="ti ti-shield-check"></i><div><strong>Controlled releases</strong><div class="text-white-50 small">Review, approval and versioning with a full audit trail.</div></div></div>
+                    <div class="auth-feature"><i class="ti ti-building-store"></i><div><strong>Dealer ready</strong><div class="text-white-50 small">Technicians find the right SOP in seconds, print or PDF.</div></div></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-lg-none text-center mb-4">
+                        <span class="app-brand-mark"><i class="ti ti-settings-automation"></i></span>
+                    </div>
+                    <h2 class="h2 mb-1">Welcome back</h2>
+                    <p class="text-secondary mb-4">Sign in to continue to Service Excellence.</p>
+                    <form asp-action="Login" method="post" autocomplete="off" novalidate>
+                        <input type="hidden" asp-for="ReturnUrl" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+                                <input asp-for="Username" class="form-control" autocomplete="username" placeholder="Your username" autofocus />
+                            </div>
+                            <span asp-validation-for="Username"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Password" class="form-label"></label>
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-lock"></i></span>
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Your password" />
+                            </div>
+                            <span asp-validation-for="Password"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="ti ti-login-2 me-2"></i>Sign in
+                        </button>
+                    </form>
+                    <div class="hr-text">Sample accounts</div>
+                    <div class="demo-users small text-secondary">
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            @foreach (var u in new[] { "admin", "author", "approver", "dealer" })
+                            {
+                                <code data-demo-user="@u" title="Click to fill">@u</code>
+                            }
+                        </div>
+                        <div class="text-center mt-2">Password for all: <code>Pass@@123</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center text-secondary small mt-3">
+        <button type="button" class="btn btn-ghost-secondary btn-sm" data-theme-toggle aria-label="Toggle dark mode">
+            <i class="ti ti-moon theme-icon-dark me-1"></i><i class="ti ti-sun theme-icon-light me-1"></i>Theme
+        </button>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll('[data-demo-user]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                document.getElementById('Username').value = el.dataset.demoUser;
+                document.getElementById('Password').focus();
+            });
+        });
+    </script>
+}

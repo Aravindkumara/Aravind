@@ -1,0 +1,49 @@
+@model DealerSaveRequest
+@{ ViewData["Title"] = ViewBag.Id == null ? "Add dealer" : "Edit dealer"; ViewData["Pretitle"] = "Dealers"; }
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <form method="post" class="card">
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Code" class="form-label required"></label>
+                        <input asp-for="Code" class="form-control text-uppercase font-monospace" />
+                        <span asp-validation-for="Code"></span>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label asp-for="Name" class="form-label required"></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="City" class="form-label"></label>
+                        <input asp-for="City" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="State" class="form-label"></label>
+                        <input asp-for="State" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ContactPhone" class="form-label"></label>
+                        <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-phone"></i></span><input asp-for="ContactPhone" class="form-control" /></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-mail"></i></span><input asp-for="Email" class="form-control" /></div>
+                        <span asp-validation-for="Email"></span>
+                    </div>
+                </div>
+                <label class="form-check form-switch">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <span class="form-check-label">Active</span>
+                </label>
+            </div>
+            <div class="card-footer text-end">
+                <a asp-action="Index" class="btn btn-link">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

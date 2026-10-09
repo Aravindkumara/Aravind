@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+@{
+    var isAdmin = User.IsInRole(Roles.Admin);
+    var isInternal = User.IsInternal();
+    var canAuthor = isAdmin || User.IsInRole(Roles.Author);
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var routeType = ViewContext.RouteData.Values["type"]?.ToString();
+    string Active(string name, string? type = null) =>
+        string.Equals(controller, name, StringComparison.OrdinalIgnoreCase)
+        && (type == null || string.Equals(routeType, type, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+}
+<head>
+    <partial name="_ThemeHead" />
+    <title>@ViewData["Title"] · Service Excellence</title>
+</head>
+<body>
+<div class="page">
+    <aside class="navbar navbar-vertical navbar-expand-lg app-sidebar" data-bs-theme="dark">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
+                    aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand navbar-brand-autodark app-brand" asp-controller="Home" asp-action="Index">
+                <span class="app-brand-mark"><i class="ti ti-settings-automation"></i></span>
+                <span class="app-brand-text">Service<strong>Excellence</strong></span>
+            </a>
+            <div class="navbar-nav flex-row d-lg-none">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
+                        <span class="avatar avatar-sm bg-primary-lt">@Ui.Initials(User.GetFullName())</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change password</a>
+                        <form asp-controller="Account" asp-action="Logout" method="post"><button type="submit" class="dropdown-item">Sign out</button></form>
+                    </div>
+                </div>
+            </div>
+            <div class="collapse navbar-collapse" id="sidebar-menu">
+                <ul class="navbar-nav pt-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Home")" asp-controller="Home" asp-action="Index">
+                            <span class="nav-link-icon"><i class="ti ti-layout-dashboard"></i></span><span class="nav-link-title">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-section">Service procedures</li>
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Finder")" asp-controller="Finder" asp-action="Index">
+                            <span class="nav-link-icon"><i class="ti ti-search"></i></span><span class="nav-link-title">SOP Finder</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Sops")" asp-controller="Sops" asp-action="Index">
+                            <span class="nav-link-icon"><i class="ti ti-file-text"></i></span><span class="nav-link-title">@(isInternal ? "All SOPs" : "SOP Library")</span>
+                        </a>
+                    </li>
+                    @if (canAuthor)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Sops" asp-action="Create">
+                                <span class="nav-link-icon"><i class="ti ti-file-plus"></i></span><span class="nav-link-title">New SOP</span>
+                            </a>
+                        </li>
+                    }
+
+                    @if (isInternal)
+                    {
+                        <li class="nav-section">Product hierarchy</li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Masters", "Division")" asp-controller="Masters" asp-action="Index" asp-route-type="Division">
+                                <span class="nav-link-icon"><i class="ti ti-building-factory-2"></i></span><span class="nav-link-title">Divisions</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Masters", "Category")" asp-controller="Masters" asp-action="Index" asp-route-type="Category">
+                                <span class="nav-link-icon"><i class="ti ti-category"></i></span><span class="nav-link-title">Model Categories</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Masters", "Model")" asp-controller="Masters" asp-action="Index" asp-route-type="Model">
+                                <span class="nav-link-icon"><i class="ti ti-car"></i></span><span class="nav-link-title">Models</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Masters", "Variant")" asp-controller="Masters" asp-action="Index" asp-route-type="Variant">
+                                <span class="nav-link-icon"><i class="ti ti-versions"></i></span><span class="nav-link-title">Variants</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Assemblies")" asp-controller="Assemblies" asp-action="Index">
+                                <span class="nav-link-icon"><i class="ti ti-binary-tree-2"></i></span><span class="nav-link-title">Assemblies</span>
+                            </a>
+                        </li>
+                    }
+
+                    @if (isAdmin)
+                    {
+                        <li class="nav-section">Administration</li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Dealers")" asp-controller="Dealers" asp-action="Index">
+                                <span class="nav-link-icon"><i class="ti ti-building-store"></i></span><span class="nav-link-title">Dealers</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Users")" asp-controller="Users" asp-action="Index">
+                                <span class="nav-link-icon"><i class="ti ti-users"></i></span><span class="nav-link-title">Users</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @Active("Audit")" asp-controller="Audit" asp-action="Index">
+                                <span class="nav-link-icon"><i class="ti ti-history"></i></span><span class="nav-link-title">Audit Trail</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </aside>
+
+    <div class="page-wrapper">
+        <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none app-topbar">
+            <div class="container-xl">
+                <form asp-controller="Sops" asp-action="Index" method="get" class="app-search" role="search">
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="search" name="search" class="form-control" placeholder="Search SOPs by code or title…" aria-label="Search SOPs" />
+                    </div>
+                </form>
+                <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+                    <button type="button" class="nav-link px-2 theme-toggle" data-theme-toggle title="Toggle dark mode" aria-label="Toggle dark mode">
+                        <i class="ti ti-moon theme-icon-dark"></i><i class="ti ti-sun theme-icon-light"></i>
+                    </button>
+                    <div class="nav-item dropdown ms-2">
+                        <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+                            <span class="avatar avatar-sm bg-primary-lt fw-bold">@Ui.Initials(User.GetFullName())</span>
+                            <div class="d-none d-xl-block ps-2">
+                                <div>@User.GetFullName()</div>
+                                <div class="mt-1 small text-secondary">@role</div>
+                            </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                            <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="ti ti-key me-2"></i>Change password</a>
+                            <div class="dropdown-divider"></div>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i>Sign out</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        @if (ViewData["Title"] != null && ViewData["HideHeader"] == null)
+        {
+            <div class="page-header d-print-none">
+                <div class="container-xl">
+                    <div class="row g-3 align-items-center">
+                        <div class="col">
+                            @if (ViewData["Pretitle"] != null) { <div class="page-pretitle">@Html.Raw(ViewData["Pretitle"])</div> }
+                            <h2 class="page-title">@ViewData["Title"]</h2>
+                            @if (ViewData["Subtitle"] != null) { <div class="text-secondary mt-1">@ViewData["Subtitle"]</div> }
+                        </div>
+                        @if (IsSectionDefined("PageActions"))
+                        {
+                            <div class="col-auto ms-auto d-print-none">
+                                <div class="btn-list">@await RenderSectionAsync("PageActions")</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="page-body">
+            <div class="container-xl">
+                <partial name="_Alerts" />
+                @RenderBody()
+            </div>
+        </div>
+
+        <footer class="footer footer-transparent d-print-none">
+            <div class="container-xl text-secondary small">
+                OEM Product Service Excellence · Standard operating procedures for dealer service
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script src="~/lib/tabler/js/tabler.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

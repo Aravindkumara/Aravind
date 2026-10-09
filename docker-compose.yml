@@ -1,0 +1,58 @@
+# OEM Product Service Excellence - local stack
+#   Web (MVC):  http://localhost:8080
+#   API:        http://localhost:8081/swagger
+#   Postgres:   localhost:5433  (db: service_excellence, user: sopapp)
+#
+# The database schema and seed data in ./database are applied automatically the first time the
+# postgres volume is created. To start from scratch: docker compose down -v
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: service_excellence
+      POSTGRES_USER: sopapp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sopapp_pwd}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sopapp -d service_excellence"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: src/ServiceExcellence.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=service_excellence;Username=sopapp;Password=${POSTGRES_PASSWORD:-sopapp_pwd}"
+      Jwt__Key: ${JWT_KEY:-change-this-docker-signing-key-to-a-long-random-secret}
+      Storage__UploadPath: /app/uploads
+      Swagger__Enabled: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: src/ServiceExcellence.Web/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Api__BaseUrl: http://api:8080/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads:

@@ -1,0 +1,85 @@
+@model ListViewModel<AuditLogDto, AuditQuery>
+@{
+    ViewData["Title"] = "Audit trail";
+    ViewData["Pretitle"] = "Administration";
+    var entities = new[] { AuditEntities.Sop, AuditEntities.Master, AuditEntities.Assembly, AuditEntities.Dealer, AuditEntities.User };
+}
+<div class="card">
+    <div class="card-body border-bottom py-3">
+        <form method="get" class="row g-2 align-items-end filter-row">
+            <div class="col-md-3">
+                <label class="form-label" for="search">Search</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Details, user or action" />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="entityType">Record type</label>
+                <select id="entityType" name="entityType" class="form-select">
+                    <option value="">All</option>
+                    @foreach (var e in entities)
+                    {
+                        <option value="@e" selected="@(e == Model.Query.EntityType)">@e</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="from">From</label>
+                <input id="from" name="from" type="date" value="@Model.Query.From?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="to">To</label>
+                <input id="to" name="to" type="date" value="@Model.Query.To?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-filter me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-ghost-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+    @if (Model.Result.TotalCount == 0)
+    {
+        <div class="card-body"><partial name="_Empty" model="@(("ti-history-off", "No audit entries", "Nothing matches these filters."))" /></div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter">
+                <thead>
+                    <tr>
+                        <th><partial name="_SortHeader" model="@(("Action", "action"))" /></th>
+                        <th>Details</th>
+                        <th><partial name="_SortHeader" model="@(("Record", "entityType"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("User", "username"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("When", "createdAt"))" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var a in Model.Result.Items)
+                {
+                    <tr>
+                        <td class="text-nowrap">
+                            <span class="avatar avatar-xs bg-@(Ui.AuditColor(a.Action))-lt me-2"><i class="ti @Ui.AuditIcon(a.Action)"></i></span>@a.Action
+                        </td>
+                        <td class="small">@a.Details</td>
+                        <td class="small text-nowrap">
+                            @if (a.EntityType == AuditEntities.Sop)
+                            {
+                                <a asp-controller="Sops" asp-action="Details" asp-route-id="@a.EntityId">SOP #@a.EntityId</a>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">@($"{a.EntityType} #{a.EntityId}")</span>
+                            }
+                        </td>
+                        <td class="small"><span class="avatar avatar-xs me-1">@Ui.Initials(a.Username ?? "?")</span>@a.Username</td>
+                        <td class="small text-secondary text-nowrap">@Ui.DateTime(a.CreatedAt)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pager" model="PagerModel.From(Model.Result)" />
+    }
+</div>

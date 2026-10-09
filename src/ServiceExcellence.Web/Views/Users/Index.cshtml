@@ -1,0 +1,79 @@
+@model ListViewModel<UserDto, UserQuery>
+@{
+    ViewData["Title"] = "Users";
+    ViewData["Pretitle"] = "Administration";
+    string RoleColor(string role) => role switch { Roles.Admin => "purple", Roles.Author => "blue", Roles.Approver => "green", _ => "orange" };
+}
+@section PageActions { <a asp-action="Create" class="btn btn-primary"><i class="ti ti-user-plus me-1"></i>Add user</a> }
+<div class="card">
+    <div class="card-body border-bottom py-3">
+        <form method="get" class="row g-2 align-items-end filter-row">
+            <div class="col-md-4">
+                <label class="form-label" for="search">Search</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input id="search" name="search" value="@Model.Query.Search" class="form-control" placeholder="Username, name, email or dealer" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="role">Role</label>
+                <select id="role" name="role" class="form-select">
+                    <option value="">All roles</option>
+                    @foreach (var r in Roles.All)
+                    {
+                        <option value="@r" selected="@(r == Model.Query.Role)">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-filter me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-ghost-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+    @if (Model.Result.TotalCount == 0)
+    {
+        <div class="card-body"><partial name="_Empty" model="@(("ti-users", "No users found", "Try a different search or role."))" /></div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter">
+                <thead>
+                    <tr>
+                        <th><partial name="_SortHeader" model="@(("User", "fullName"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Username", "username"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Role", "role"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Dealer", "dealer"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Last login", "lastLogin"))" /></th>
+                        <th><partial name="_SortHeader" model="@(("Status", "isActive"))" /></th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var u in Model.Result.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar avatar-sm bg-@(RoleColor(u.Role))-lt fw-bold">@Ui.Initials(u.FullName)</span>
+                                <div>
+                                    <div class="fw-medium">@u.FullName</div>
+                                    <div class="small text-secondary">@u.Email</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="font-monospace small">@u.Username</td>
+                        <td><span class="badge bg-@(RoleColor(u.Role))-lt">@u.Role</span></td>
+                        <td class="small text-secondary">@(u.DealerName ?? "—")</td>
+                        <td class="small text-secondary">@Ui.DateTime(u.LastLoginAt)</td>
+                        <td><partial name="_ActiveBadge" model="u.IsActive" /></td>
+                        <td><a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-icon btn-ghost-primary" title="Edit" aria-label="Edit @u.Username"><i class="ti ti-edit"></i></a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pager" model="PagerModel.From(Model.Result)" />
+    }
+</div>

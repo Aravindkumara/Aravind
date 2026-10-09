@@ -1,0 +1,57 @@
+@model MasterFormViewModel
+@{
+    var label = MasterTypes.Display(Model.Type);
+    ViewData["Title"] = (Model.Id.HasValue ? "Edit " : "Add ") + label.ToLowerInvariant();
+    ViewData["Pretitle"] = MasterTypes.DisplayPlural(Model.Type);
+    var parentType = MasterTypes.Parent(Model.Type);
+}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <form method="post" class="card">
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                @if (parentType is { } pt)
+                {
+                    <div class="mb-3">
+                        <label asp-for="Item.ParentId" class="form-label required">@MasterTypes.Display(pt)</label>
+                        <select asp-for="Item.ParentId" class="form-select">
+                            <option value="">Select @MasterTypes.Display(pt).ToLowerInvariant()…</option>
+                            @foreach (var p in Model.Parents)
+                            {
+                                <option value="@p.Id">@p.Name (@p.Code)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Item.ParentId"></span>
+                    </div>
+                }
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Item.Code" class="form-label required"></label>
+                        <input asp-for="Item.Code" class="form-control text-uppercase font-monospace" />
+                        <span asp-validation-for="Item.Code"></span>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label asp-for="Item.Name" class="form-label required"></label>
+                        <input asp-for="Item.Name" class="form-control" />
+                        <span asp-validation-for="Item.Name"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Item.Description" class="form-label"></label>
+                    <textarea asp-for="Item.Description" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Item.Description"></span>
+                </div>
+                <label class="form-check form-switch">
+                    <input asp-for="Item.IsActive" class="form-check-input" />
+                    <span class="form-check-label">Active</span>
+                    <span class="form-check-description">Inactive items are hidden from drop-downs; existing SOPs keep them.</span>
+                </label>
+            </div>
+            <div class="card-footer text-end">
+                <a asp-action="Index" asp-route-type="@Model.Type" class="btn btn-link">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

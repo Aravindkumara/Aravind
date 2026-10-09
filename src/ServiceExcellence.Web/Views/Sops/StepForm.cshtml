@@ -1,0 +1,80 @@
+@model StepFormViewModel
+@{
+    var isEdit = Model.StepId.HasValue;
+    ViewData["Title"] = isEdit ? $"Edit step {Model.Item.StepNo}" : "Add step";
+    ViewData["Pretitle"] = $"<a href=\"{Url.Action("Details", new { id = Model.SopId })}\" class=\"text-reset\">{System.Net.WebUtility.HtmlEncode(Model.SopCode)}</a> · {System.Net.WebUtility.HtmlEncode(Model.SopTitle)}";
+}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+        <form method="post" class="card">
+            <input type="hidden" asp-for="SopCode" />
+            <input type="hidden" asp-for="SopTitle" />
+            <input type="hidden" asp-for="StepCount" />
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <div class="row">
+                    @if (isEdit)
+                    {
+                        <input type="hidden" asp-for="Item.StepNo" />
+                    }
+                    else
+                    {
+                        <div class="col-md-2 mb-3">
+                            <label asp-for="Item.StepNo" class="form-label"></label>
+                            <input asp-for="Item.StepNo" class="form-control" type="number" min="1" max="@(Model.StepCount + 1)" />
+                        </div>
+                    }
+                    <div class="@(isEdit ? "col-md-9" : "col-md-7") mb-3">
+                        <label asp-for="Item.Title" class="form-label required"></label>
+                        <input asp-for="Item.Title" class="form-control" placeholder="Short action, e.g. 'Remove caliper'" />
+                        <span asp-validation-for="Item.Title"></span>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Item.EstimatedMinutes" class="form-label"></label>
+                        <div class="input-group">
+                            <input asp-for="Item.EstimatedMinutes" class="form-control" type="number" min="0" />
+                            <span class="input-group-text">min</span>
+                        </div>
+                        <span asp-validation-for="Item.EstimatedMinutes"></span>
+                    </div>
+                    @if (!isEdit)
+                    {
+                        <div class="col-12 mt-n2 mb-3"><small class="form-hint">The step is inserted at this position; later steps move down.</small></div>
+                    }
+                    <div class="col-12 mb-3">
+                        <label asp-for="Item.Instruction" class="form-label required"></label>
+                        <textarea asp-for="Item.Instruction" class="form-control" rows="5" placeholder="Describe exactly what the technician must do."></textarea>
+                        <span asp-validation-for="Item.Instruction"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Item.ToolsRequired" class="form-label"><i class="ti ti-tool me-1 text-secondary"></i>Tools required</label>
+                        <input asp-for="Item.ToolsRequired" class="form-control" placeholder="e.g. 17 mm socket, torque wrench" />
+                        <span asp-validation-for="Item.ToolsRequired"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Item.Specification" class="form-label"><i class="ti ti-ruler-measure me-1 text-secondary"></i>Specification / torque</label>
+                        <input asp-for="Item.Specification" class="form-control" placeholder="e.g. 35 Nm; 6.5 L 5W-30" />
+                        <span asp-validation-for="Item.Specification"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Item.Caution" class="form-label"><i class="ti ti-alert-octagon me-1 text-danger"></i>Caution</label>
+                        <textarea asp-for="Item.Caution" class="form-control" rows="2" placeholder="Hazards or quality-critical points for this step"></textarea>
+                        <span asp-validation-for="Item.Caution"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+                <small class="text-secondary"><i class="ti ti-paperclip me-1"></i>Photos and PDFs can be attached from the SOP page after saving.</small>
+                <div class="ms-auto d-flex gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.SopId" class="btn btn-link">Cancel</a>
+                    @if (!isEdit)
+                    {
+                        <button type="submit" name="next" value="add" class="btn"><i class="ti ti-plus me-1"></i>Save &amp; add another</button>
+                    }
+                    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Save step</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
